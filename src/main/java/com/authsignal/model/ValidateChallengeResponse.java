@@ -1,4 +1,4 @@
-package com.authsignal.models;
+package com.authsignal.model;
 
 public class ValidateChallengeResponse {
   public Boolean success;

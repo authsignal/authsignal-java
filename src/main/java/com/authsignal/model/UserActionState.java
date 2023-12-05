@@ -1,4 +1,4 @@
-package com.authsignal.models;
+package com.authsignal.model;
 
 import com.google.gson.annotations.SerializedName;
 

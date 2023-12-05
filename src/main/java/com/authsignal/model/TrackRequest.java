@@ -1,4 +1,4 @@
-package com.authsignal.models;
+package com.authsignal.model;
 
 public class TrackRequest {
   public String userId;

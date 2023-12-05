@@ -1,6 +1,7 @@
-package com.authsignal.models;
+package com.authsignal.model;
 
-public class EnrollVerifiedAuthenticatorRequestBody {
+public class EnrollVerifiedAuthenticatorRequest {
+  public String userId;
   public OobChannel oobChannel;
   public String phoneNumber;
   public String email;

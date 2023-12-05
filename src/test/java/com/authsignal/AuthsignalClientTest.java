@@ -2,50 +2,74 @@ package com.authsignal;
 
 import org.junit.Test;
 
-import com.authsignal.models.*;
-import com.nimbusds.jose.JOSEException;
+import com.authsignal.exception.AuthsignalException;
+import com.authsignal.model.*;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.text.ParseException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class AuthsignalClientTest {
-    private String baseURL = "https://dev-api.authsignal.com/v1";
-    private String secret = "UcPsFXS81O3k3xMv9/XBQsjXRc2otwnZ5qGC6jS2DoW6QwXX5FHi0A==";
-    private String userId = "5a616356-9a74-4d6d-b3bb-1d6e128f4d6b";
-    private String action = "test-action";
+  private final String baseURL = "https://api.authsignal.com/v1";
+  private final String secret = "";
+  private final String userId = "3efdac26-fbac-4043-b5a2-5a02c2e63364";
+  private final String action = "test-action";
 
-    @Test
-    public void testSequence()
-            throws URISyntaxException, IOException, InterruptedException, ParseException, JOSEException {
-        AuthsignalClient client = new AuthsignalClient(secret, baseURL);
+  private AuthsignalClient client = new AuthsignalClient(secret, baseURL);
 
-        UserRequest userRequest = new UserRequest();
-        userRequest.userId = userId;
+  @Test
+  public void testAll() throws AuthsignalException, InterruptedException, ExecutionException {
+    CompletableFuture<Boolean> success = testGetUser().thenCompose(userResponse -> {
+      assertNotNull("userResponse should exist", userResponse);
 
-        UserResponse userResponse = client.getUser(userRequest);
+      return testTrack();
+    }).thenCompose(trackResponse -> {
+      assertNotNull("trackResponse should return token", trackResponse.token);
 
-        assertNotNull("user response should exist", userResponse);
+      return testValidateChallenge(trackResponse.token);
+    }).thenApply(validateChallengeResponse -> {
+      assertTrue("validateChallengeResponse state should be ALLOW",
+          validateChallengeResponse.state == UserActionState.ALLOW);
 
-        TrackRequest trackRequest = new TrackRequest();
-        trackRequest.userId = userId;
-        trackRequest.action = action;
+      return validateChallengeResponse.success;
+    });
 
-        TrackResponse trackResponse = client.track(trackRequest);
+    System.out.println("Success: " + success.get());
+  }
 
-        assertNotNull("track should return token", trackResponse.token);
+  private CompletableFuture<UserResponse> testGetUser() {
+    UserRequest userRequest = new UserRequest();
+    userRequest.userId = userId;
 
-        ValidateChallengeRequest validateChallengeRequest = new ValidateChallengeRequest();
-        validateChallengeRequest.token = trackResponse.token;
-        validateChallengeRequest.userId = userId;
-
-        ValidateChallengeResponse validateChallengeResponse = client.validateChallenge(validateChallengeRequest);
-
-        assertEquals(
-                "state should be allow",
-                validateChallengeResponse.state,
-                UserActionState.ALLOW);
+    try {
+      return client.getUser(userRequest);
+    } catch (AuthsignalException e) {
+      throw new RuntimeException(e);
     }
+  }
+
+  private CompletableFuture<TrackResponse> testTrack() {
+    TrackRequest trackRequest = new TrackRequest();
+    trackRequest.userId = userId;
+    trackRequest.action = action;
+
+    try {
+      return client.track(trackRequest);
+    } catch (AuthsignalException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private CompletableFuture<ValidateChallengeResponse> testValidateChallenge(String token) {
+    ValidateChallengeRequest validateChallengeRequest = new ValidateChallengeRequest();
+    validateChallengeRequest.token = token;
+    validateChallengeRequest.userId = userId;
+
+    try {
+      return client.validateChallenge(validateChallengeRequest);
+    } catch (AuthsignalException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }
