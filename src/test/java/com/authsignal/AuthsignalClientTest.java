@@ -7,16 +7,30 @@ import com.authsignal.model.*;
 
 import static org.junit.Assert.*;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.Properties;
 
 public class AuthsignalClientTest {
-  private final String baseURL = "https://api.authsignal.com/v1";
-  private final String secret = "";
-  private final String userId = "3efdac26-fbac-4043-b5a2-5a02c2e63364";
-  private final String action = "test-action";
+  private final String userId;
+  private final String action;
 
-  private AuthsignalClient client = new AuthsignalClient(secret, baseURL);
+  private AuthsignalClient client;
+
+  public AuthsignalClientTest() throws FileNotFoundException, IOException {
+    Properties localProperties = new Properties();
+    localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
+
+    String secret = localProperties.getProperty("test.secret");
+    String baseURL = localProperties.getProperty("test.baseURL");
+    userId = localProperties.getProperty("test.userId");
+    action = localProperties.getProperty("test.action");
+
+    client = new AuthsignalClient(secret, baseURL);
+  }
 
   @Test
   public void testAll() throws AuthsignalException, InterruptedException, ExecutionException {
