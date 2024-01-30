@@ -8,4 +8,7 @@ public enum OobChannel {
 
   @SerializedName("EMAIL_MAGIC_LINK")
   EMAIL_MAGIC_LINK,
+
+  @SerializedName("EMAIL_OTP")
+  EMAIL_OTP,
 }
