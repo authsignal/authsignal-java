@@ -11,9 +11,6 @@ repositories {
 
 dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-gson:0.12.3'
 
     testImplementation 'junit:junit:4.13.2'
 }
@@ -87,4 +84,8 @@ signing {
     )
 
     sign publishing.publications.mavenJava
+}
+
+test {
+    testLogging.showStandardStreams = true
 }
