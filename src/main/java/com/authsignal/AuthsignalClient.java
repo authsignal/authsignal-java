@@ -5,9 +5,6 @@ import com.authsignal.model.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -66,59 +63,8 @@ public class AuthsignalClient {
   public CompletableFuture<ValidateChallengeResponse> validateChallenge(ValidateChallengeRequest request)
       throws AuthsignalException {
 
-    ValidateChallengeResponse response = new ValidateChallengeResponse();
-
-    Boolean isValid = false;
-
-    String userId;
-    String action;
-    String idempotencyKey;
-
-    try {
-      Claims claims = Jwts.parser()
-          .verifyWith(Keys.hmacShaKeyFor(_secret.getBytes()))
-          .build()
-          .parseSignedClaims(request.token)
-          .getPayload();
-
-      userId = claims.getSubject();
-
-      Object otherObj = claims.get("other");
-
-      JsonObject other = new Gson().toJsonTree(otherObj).getAsJsonObject();
-
-      action = other.get("actionCode").getAsString();
-      idempotencyKey = other.get("idempotencyKey").getAsString();
-
-      isValid = true;
-    } catch (JwtException e) {
-      throw new InvalidTokenException();
-    }
-
-    if (!isValid) {
-      response.success = false;
-
-      return CompletableFuture.completedFuture(response);
-    }
-
-    if (request.userId != null && !request.userId.equals(userId)) {
-      response.success = false;
-
-      return CompletableFuture.completedFuture(response);
-    }
-
-    ActionRequest actionRequest = new ActionRequest();
-    actionRequest.userId = userId;
-    actionRequest.action = action;
-    actionRequest.idempotencyKey = idempotencyKey;
-
-    return getAction(actionRequest).thenApply(actionResponse -> {
-      response.success = actionResponse.state == UserActionState.CHALLENGE_SUCCEEDED;
-      response.state = actionResponse.state;
-      response.userId = userId;
-
-      return response;
-    });
+    return postRequest("/validate", new Gson().toJson(request))
+        .thenApply(response -> new Gson().fromJson(response.body(), ValidateChallengeResponse.class));
   }
 
   public CompletableFuture<EnrollVerifiedAuthenticatorResponse> enrollVerifiedAuthenticator(

@@ -45,8 +45,10 @@ public class AuthsignalClientTest {
     }).thenApply(validateChallengeResponse -> {
       assertTrue("validateChallengeResponse state should be ALLOW",
           validateChallengeResponse.state == UserActionState.ALLOW);
-
-      return validateChallengeResponse.success;
+      assertTrue("validateChallengeResponse action should match",
+          validateChallengeResponse.action.equals(this.action));
+      
+      return validateChallengeResponse.isValid;
     });
 
     System.out.println("Success: " + success.get());
@@ -78,7 +80,6 @@ public class AuthsignalClientTest {
   private CompletableFuture<ValidateChallengeResponse> testValidateChallenge(String token) {
     ValidateChallengeRequest validateChallengeRequest = new ValidateChallengeRequest();
     validateChallengeRequest.token = token;
-    validateChallengeRequest.userId = userId;
 
     try {
       return client.validateChallenge(validateChallengeRequest);
