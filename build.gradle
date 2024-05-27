@@ -31,49 +31,52 @@ nexusPublishing {
 }
 
 java {
-  withJavadocJar()
-  withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+
+    withJavadocJar()
+    withSourcesJar()
 }
 
 publishing {
-  publications {
-    mavenJava(MavenPublication) {
-      artifactId = project.pomArtifactId
-      groupId = project.pomGroup
-      version = project.versionName
-      from components.java
-      versionMapping {
-        usage('java-api') {
-          fromResolutionOf('runtimeClasspath')
-        }
-        usage('java-runtime') {
-          fromResolutionResult()
-        }
-      }
-      pom {
-          name = 'authsignal-java'
-          description = 'The Authsignal Server SDK for Java.'
-          url = 'https://github.com/authsignal/authsignal-java'
-          licenses {
-            license {
-              name = 'MIT'
-              url = 'https://github.com/authsignal/authsignal-java/blob/main/LICENSE.md'
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = project.pomArtifactId
+            groupId = project.pomGroup
+            version = project.versionName
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
             }
-          }
-          developers {
-            developer {
-              id = 'Authsignal'
-              name = 'Authsignal'
+            pom {
+                name = 'authsignal-java'
+                description = 'The Authsignal Server SDK for Java.'
+                url = 'https://github.com/authsignal/authsignal-java'
+                licenses {
+                    license {
+                        name = 'MIT'
+                        url = 'https://github.com/authsignal/authsignal-java/blob/main/LICENSE.md'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'Authsignal'
+                        name = 'Authsignal'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:github.com/authsignal/authsignal-java.git'
+                    developerConnection = 'scm:git:ssh://github.com/authsignal/authsignal-java.git'
+                    url = 'https://github.com/authsignal/authsignal-java/tree/main'
+                }
             }
-          }
-          scm {
-              connection = 'scm:git:github.com/authsignal/authsignal-java.git'
-              developerConnection = 'scm:git:ssh://github.com/authsignal/authsignal-java.git'
-              url = 'https://github.com/authsignal/authsignal-java/tree/main'
-          }
-      }
+        }
     }
-  }
 }
 
 signing {
