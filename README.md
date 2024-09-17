@@ -6,7 +6,7 @@ Check out our [official Java SDK documentation](https://docs.authsignal.com/sdks
 
 ### Requirements
 
-- Java 1.8 or later
+- Java 1.11 or later
 
 ### Gradle users
 
