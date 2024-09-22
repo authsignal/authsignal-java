@@ -5,7 +5,7 @@ public class UserResponse {
   public String email;
   public String phoneNumber;
   public Boolean isEnrolled;
-  public VerificationMethodType[] allowedVerificationMethods
-  public VerificationMethodType[] allowedVerificationMethods
-  public VerificationMethodType defaultVerificationMethod
+  public VerificationMethodType[] allowedVerificationMethods;
+  public VerificationMethodType[] enrolledVerificationMethods;
+  public VerificationMethodType defaultVerificationMethod;
 }
