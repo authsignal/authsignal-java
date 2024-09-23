@@ -6,4 +6,7 @@ public class TrackResponse {
   public String url;
   public String token;
   public Boolean isEnrolled;
+  public VerificationMethodType[] allowedVerificationMethods;
+  public VerificationMethodType[] enrolledVerificationMethods;
+  public VerificationMethodType defaultVerificationMethod;
 }
