@@ -9,5 +9,6 @@ public class TrackRequestBody {
   public String ipAddress;
   public String userAgent;
   public String deviceId;
+  public String scope;
   public Boolean redirectToSettings;
 }

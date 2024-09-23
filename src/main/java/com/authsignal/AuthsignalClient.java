@@ -48,6 +48,7 @@ public class AuthsignalClient {
     body.userAgent = request.userAgent;
     body.deviceId = request.deviceId;
     body.redirectToSettings = request.redirectToSettings;
+    body.scope = request.scope;
 
     return postRequest(path, new Gson().toJson(body))
         .thenApply(response -> new Gson().fromJson(response.body(), TrackResponse.class));
