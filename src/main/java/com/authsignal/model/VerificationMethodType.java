@@ -21,18 +21,18 @@ public enum VerificationMethodType {
   @SerializedName("SECURITY_KEY")
   SECURITY_KEY,
 
-  SerializedName("PASSKEY")
+  @SerializedName("PASSKEY")
   PASSKEY,
 
-  SerializedName("VERIFF")
+  @SerializedName("VERIFF")
   VERIFF,
 
-  SerializedName("IPROOV")
+  @SerializedName("IPROOV")
   IPROOV,
 
-  SerializedName("PALM_BIOMETRICS_RR")
+  @SerializedName("PALM_BIOMETRICS_RR")
   PALM_BIOMETRICS_RR,
 
-  SerializedName("IDVERSE")
+  @SerializedName("IDVERSE")
   IDVERSE,
 }
