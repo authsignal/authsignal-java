@@ -34,6 +34,20 @@ public class AuthsignalClient {
         response -> new Gson().fromJson(response.body(), UserResponse.class));
   }
 
+  public CompletableFuture<UpdateUserResponse> updateUser(UpdateUserRequest request) throws AuthsignalException {
+    String path = String.format("/users/%s", request.userId);
+
+    UpdateUserRequestBody body = new UpdateUserRequestBody();
+
+    body.email = request.email;
+    body.phoneNumber = request.phoneNumber;
+    body.username = request.username;
+    body.displayName = request.displayName;
+
+    return postRequest(path, new Gson().toJson(body))
+        .thenApply(response -> new Gson().fromJson(response.body(), UpdateUserResponse.class));
+  }
+
   public CompletableFuture<UserAuthenticator[]> getAuthenticators(UserRequest request) throws AuthsignalException {
     String path = String.format("/users/%s/authenticators", request.userId);
 
@@ -89,6 +103,14 @@ public class AuthsignalClient {
         .thenApply(response -> new Gson().fromJson(response.body(), EnrollVerifiedAuthenticatorResponse.class));
   }
 
+  public CompletableFuture<DeleteAuthenticatorResponse> deleteAuthenticator(DeleteAuthenticatorRequest request)
+      throws AuthsignalException {
+    String path = String.format("/users/%s/authenticators/%s", request.userId, request.userAuthenticatorId);
+
+    return deleteRequest(path)
+        .thenApply(response -> new Gson().fromJson(response.body(), DeleteAuthenticatorResponse.class));
+  }
+
   private CompletableFuture<HttpResponse<String>> getRequest(String path) throws AuthsignalException {
     HttpClient client = HttpClient.newHttpClient();
 
@@ -125,6 +147,26 @@ public class AuthsignalClient {
         .header("Authorization", getBasicAuthHeader())
         .header("Content-Type", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+
+    return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+  }
+
+  private CompletableFuture<HttpResponse<String>> deleteRequest(String path) throws AuthsignalException {
+    HttpClient client = HttpClient.newHttpClient();
+
+    URI uri;
+
+    try {
+      uri = new URI(_baseURL + path);
+    } catch (URISyntaxException ex) {
+      throw new InvalidBaseURLException();
+    }
+
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(uri)
+        .header("Authorization", getBasicAuthHeader())
+        .DELETE()
         .build();
 
     return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
