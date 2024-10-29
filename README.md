@@ -13,7 +13,7 @@ Check out our [official Java SDK documentation](https://docs.authsignal.com/sdks
 Add this dependency to your project's build file:
 
 ```groovy
-implementation 'com.authsignal:authsignal-java:0.2.2'
+implementation 'com.authsignal:authsignal-java:0.3.0'
 ```
 
 ### Maven users
