@@ -40,8 +40,8 @@ public class AuthsignalClientTest {
       return testGetAuthenticators();
     }).thenCompose(authenticators -> {
       assertNotNull("authenticators should exist", authenticators);
-      assertTrue("authenticators should be empty", authenticators.length == 1);
-      assertTrue("", authenticators[0].verificationMethod == VerificationMethodType.PASSKEY);
+      assertTrue("authenticators not should be empty", authenticators.length == 1);
+      assertTrue("verification method should be passkey", authenticators[0].verificationMethod == VerificationMethodType.PASSKEY);
 
       return testTrack();
     }).thenCompose(trackResponse -> {
