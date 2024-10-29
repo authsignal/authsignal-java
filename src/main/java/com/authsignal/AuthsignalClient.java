@@ -34,6 +34,13 @@ public class AuthsignalClient {
         response -> new Gson().fromJson(response.body(), UserResponse.class));
   }
 
+  public CompletableFuture<UserAuthenticator[]> getAuthenticators(UserRequest request) throws AuthsignalException {
+    String path = String.format("/users/%s/authenticators", request.userId);
+
+    return getRequest(path).thenApply(
+        response -> new Gson().fromJson(response.body(), UserAuthenticator[].class));
+  }
+
   public CompletableFuture<TrackResponse> track(TrackRequest request) throws AuthsignalException {
     String path = String.format("/users/%s/actions/%s", request.userId, request.action);
 
@@ -52,7 +59,6 @@ public class AuthsignalClient {
 
     return postRequest(path, new Gson().toJson(body))
         .thenApply(response -> new Gson().fromJson(response.body(), TrackResponse.class));
-
   }
 
   public CompletableFuture<ActionResponse> getAction(ActionRequest request) throws AuthsignalException {
