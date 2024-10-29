@@ -33,9 +33,15 @@ public class AuthsignalClientTest {
   }
 
   @Test
-  public void testAll() throws AuthsignalException, InterruptedException, ExecutionException {
-    CompletableFuture<Boolean> success = testGetUser().thenCompose(userResponse -> {
+  public void testUserEnrolledWithPasskeyMethod() throws AuthsignalException, InterruptedException, ExecutionException {
+    CompletableFuture<Boolean> isValid = testGetUser().thenCompose(userResponse -> {
       assertNotNull("userResponse should exist", userResponse);
+
+      return testGetAuthenticators();
+    }).thenCompose(authenticators -> {
+      assertNotNull("authenticators should exist", authenticators);
+      assertTrue("authenticators not should be empty", authenticators.length == 1);
+      assertTrue("verification method should be passkey", authenticators[0].verificationMethod == VerificationMethodType.PASSKEY);
 
       return testTrack();
     }).thenCompose(trackResponse -> {
@@ -43,15 +49,15 @@ public class AuthsignalClientTest {
 
       return testValidateChallenge(trackResponse.token);
     }).thenApply(validateChallengeResponse -> {
-      assertTrue("validateChallengeResponse state should be ALLOW",
-          validateChallengeResponse.state == UserActionState.ALLOW);
+      assertTrue("validateChallengeResponse state should be CHALLENGE_REQUIRED",
+          validateChallengeResponse.state == UserActionState.CHALLENGE_REQUIRED);
       assertTrue("validateChallengeResponse action should match",
           validateChallengeResponse.action.equals(this.action));
       
       return validateChallengeResponse.isValid;
     });
 
-    System.out.println("Success: " + success.get());
+    System.out.println("isValid: " + isValid.get());
   }
 
   private CompletableFuture<UserResponse> testGetUser() {
@@ -60,6 +66,17 @@ public class AuthsignalClientTest {
 
     try {
       return client.getUser(userRequest);
+    } catch (AuthsignalException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private CompletableFuture<UserAuthenticator[]> testGetAuthenticators() {
+    UserRequest userRequest = new UserRequest();
+    userRequest.userId = userId;
+
+    try {
+      return client.getAuthenticators(userRequest);
     } catch (AuthsignalException e) {
       throw new RuntimeException(e);
     }
