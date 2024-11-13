@@ -1,6 +1,6 @@
 package com.authsignal.model;
 
-public class DeleteAuthenticatorRequest {
+public class DeleteAuthenticatorRequest extends ApiModel {
   public String userId;
   public String userAuthenticatorId;
 }

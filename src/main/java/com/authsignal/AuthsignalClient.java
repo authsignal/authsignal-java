@@ -94,7 +94,7 @@ public class AuthsignalClient {
 
     EnrollVerifiedAuthenticatorRequestBody body = new EnrollVerifiedAuthenticatorRequestBody();
 
-    body.oobChannel = request.oobChannel;
+    body.verificationMethod = request.verificationMethod;
     body.email = request.email;
     body.phoneNumber = request.phoneNumber;
     body.isDefault = request.isDefault;

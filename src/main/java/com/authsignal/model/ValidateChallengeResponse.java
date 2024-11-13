@@ -2,7 +2,7 @@ package com.authsignal.model;
 
 import com.google.gson.annotations.SerializedName;
 
-public class ValidateChallengeResponse {
+public class ValidateChallengeResponse extends ApiModel{
   public Boolean isValid;
   public UserActionState state;
   public String stateUpdatedAt;

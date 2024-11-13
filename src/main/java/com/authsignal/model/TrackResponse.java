@@ -1,6 +1,6 @@
 package com.authsignal.model;
 
-public class TrackResponse {
+public class TrackResponse extends ApiModel {
   public UserActionState state;
   public String idempotencyKey;
   public String url;
