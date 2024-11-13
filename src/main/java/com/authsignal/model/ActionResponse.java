@@ -1,6 +1,6 @@
 package com.authsignal.model;
 
-public class ActionResponse {
+public class ActionResponse extends APIModel {
   public UserActionState state;
   public String createdAt;
   public String stateUpdatedAt;

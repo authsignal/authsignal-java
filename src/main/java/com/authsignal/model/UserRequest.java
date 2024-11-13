@@ -1,5 +1,5 @@
 package com.authsignal.model;
 
-public class UserRequest {
+public class UserRequest extends APIModel {
   public String userId;
 }

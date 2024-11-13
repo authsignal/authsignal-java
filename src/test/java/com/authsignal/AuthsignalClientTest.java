@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.Properties;
+import java.util.UUID;
 
 public class AuthsignalClientTest {
   private final String userId;
@@ -26,22 +27,28 @@ public class AuthsignalClientTest {
 
     String secret = localProperties.getProperty("test.secret");
     String baseURL = localProperties.getProperty("test.baseURL");
-    userId = localProperties.getProperty("test.userId");
+
     action = localProperties.getProperty("test.action");
+    userId = UUID.randomUUID().toString();
 
     client = new AuthsignalClient(secret, baseURL);
   }
 
   @Test
-  public void testUserEnrolledWithPasskeyMethod() throws AuthsignalException, InterruptedException, ExecutionException {
-    CompletableFuture<Boolean> isValid = testGetUser().thenCompose(userResponse -> {
+  public void testUserEnrolledWithEmailOTP() throws AuthsignalException, InterruptedException, ExecutionException {
+    CompletableFuture<Boolean> isValid = testEnrollVerifiedAuthenticator().thenCompose(enrollResponse -> {
+      assertNotNull("enrollResponse should exist", enrollResponse);
+
+      return testGetUser();
+    }).thenCompose(userResponse -> {
       assertNotNull("userResponse should exist", userResponse);
+      assertTrue("user should be enrolled", userResponse.isEnrolled);
 
       return testGetAuthenticators();
     }).thenCompose(authenticators -> {
       assertNotNull("authenticators should exist", authenticators);
       assertTrue("authenticators not should be empty", authenticators.length == 1);
-      assertTrue("verification method should be passkey", authenticators[0].verificationMethod == VerificationMethodType.PASSKEY);
+      assertTrue("verification method should be passkey", authenticators[0].verificationMethod == VerificationMethodType.EMAIL_OTP);
 
       return testTrack();
     }).thenCompose(trackResponse -> {
@@ -58,6 +65,19 @@ public class AuthsignalClientTest {
     });
 
     System.out.println("isValid: " + isValid.get());
+  }
+
+  private CompletableFuture<EnrollVerifiedAuthenticatorResponse> testEnrollVerifiedAuthenticator() {
+    EnrollVerifiedAuthenticatorRequest enrollRequest = new EnrollVerifiedAuthenticatorRequest();
+    enrollRequest.userId = userId;
+    enrollRequest.verificationMethod = VerificationMethodType.EMAIL_OTP;
+    enrollRequest.email = "test@example.com";
+
+    try {
+      return client.enrollVerifiedAuthenticator(enrollRequest);
+    } catch (AuthsignalException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private CompletableFuture<UserResponse> testGetUser() {
