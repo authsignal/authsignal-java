@@ -1,6 +1,6 @@
 package com.authsignal.model;
 
-public class UserAuthenticator extends APIModel {
+public class UserAuthenticator extends ApiModel {
   public String userId;
   public String userAuthenticatorId;
   public VerificationMethodType verificationMethod;

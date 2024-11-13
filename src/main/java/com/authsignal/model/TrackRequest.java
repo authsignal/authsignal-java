@@ -1,6 +1,6 @@
 package com.authsignal.model;
 
-public class TrackRequest extends APIModel {
+public class TrackRequest extends ApiModel {
   public String userId;
   public String action;
   public String idempotencyKey;

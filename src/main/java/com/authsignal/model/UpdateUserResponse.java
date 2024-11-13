@@ -1,6 +1,6 @@
 package com.authsignal.model;
 
-public class UpdateUserResponse extends APIModel {
+public class UpdateUserResponse extends ApiModel {
   public String userId;
   public String email;
   public String phoneNumber;

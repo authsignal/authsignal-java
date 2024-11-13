@@ -2,7 +2,7 @@ package com.authsignal.model;
 
 import com.google.gson.Gson;
 
-class APIModel {
+class ApiModel {
   public String toString() {
     return new Gson().toJson(this);
   }
