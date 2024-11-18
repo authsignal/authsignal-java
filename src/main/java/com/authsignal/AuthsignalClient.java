@@ -124,7 +124,7 @@ public class AuthsignalClient {
 
     body.state = request.state;
 
-    return postRequest(path, new Gson().toJson(body))
+    return patchRequest(path, new Gson().toJson(body))
         .thenApply(response -> new Gson().fromJson(response.body(), ActionResponse.class));
   }
 
@@ -164,6 +164,27 @@ public class AuthsignalClient {
         .header("Authorization", getBasicAuthHeader())
         .header("Content-Type", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+
+    return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+  }
+
+  private CompletableFuture<HttpResponse<String>> patchRequest(String path, String body) throws AuthsignalException {
+    HttpClient client = HttpClient.newHttpClient();
+
+    URI uri;
+
+    try {
+      uri = new URI(_baseURL + path);
+    } catch (URISyntaxException ex) {
+      throw new InvalidBaseURLException();
+    }
+
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(uri)
+        .header("Authorization", getBasicAuthHeader())
+        .header("Content-Type", "application/json")
+        .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
         .build();
 
     return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
