@@ -26,14 +26,14 @@ public class AuthsignalClient {
         this._baseURL = "https://api.authsignal.com/v1";
     }
 
-    public CompletableFuture<UserResponse> getUser(UserRequest request) throws AuthsignalException {
+    public CompletableFuture<UserResponse> getUser(UserRequest request) {
         String path = String.format("/users/%s", request.userId);
 
         return getRequest(path).thenApply(
                 response -> new Gson().fromJson(response.body(), UserResponse.class));
     }
 
-    public CompletableFuture<UpdateUserResponse> updateUser(UpdateUserRequest request) throws AuthsignalException {
+    public CompletableFuture<UpdateUserResponse> updateUser(UpdateUserRequest request) {
         String path = String.format("/users/%s", request.userId);
 
         UpdateUserRequestBody body = new UpdateUserRequestBody();
@@ -42,19 +42,19 @@ public class AuthsignalClient {
         body.phoneNumber = request.phoneNumber;
         body.username = request.username;
         body.displayName = request.displayName;
+        body.custom = request.custom;
 
         return postRequest(path, new Gson().toJson(body))
                 .thenApply(response -> new Gson().fromJson(response.body(), UpdateUserResponse.class));
     }
 
-    public CompletableFuture<Void> deleteUser(UserRequest request)
-            throws AuthsignalException {
+    public CompletableFuture<Void> deleteUser(UserRequest request) {
         String path = String.format("/users/%s", request.userId);
 
         return deleteRequest(path).thenApply(response -> null);
     }
 
-    public CompletableFuture<UserAuthenticator[]> getAuthenticators(UserRequest request) throws AuthsignalException {
+    public CompletableFuture<UserAuthenticator[]> getAuthenticators(UserRequest request) {
         String path = String.format("/users/%s/authenticators", request.userId);
 
         return getRequest(path)
@@ -62,7 +62,7 @@ public class AuthsignalClient {
     }
 
     public CompletableFuture<EnrollVerifiedAuthenticatorResponse> enrollVerifiedAuthenticator(
-            EnrollVerifiedAuthenticatorRequest request) throws AuthsignalException {
+            EnrollVerifiedAuthenticatorRequest request) {
         String path = String.format("/users/%s/authenticators", request.userId);
 
         EnrollVerifiedAuthenticatorRequestBody body = new EnrollVerifiedAuthenticatorRequestBody();
@@ -76,14 +76,13 @@ public class AuthsignalClient {
                 .thenApply(response -> new Gson().fromJson(response.body(), EnrollVerifiedAuthenticatorResponse.class));
     }
 
-    public CompletableFuture<Void> deleteAuthenticator(DeleteAuthenticatorRequest request)
-            throws AuthsignalException {
+    public CompletableFuture<Void> deleteAuthenticator(DeleteAuthenticatorRequest request) {
         String path = String.format("/users/%s/authenticators/%s", request.userId, request.userAuthenticatorId);
 
         return deleteRequest(path).thenApply(response -> null);
     }
 
-    public CompletableFuture<TrackResponse> track(TrackRequest request) throws AuthsignalException {
+    public CompletableFuture<TrackResponse> track(TrackRequest request) {
         String path = String.format("/users/%s/actions/%s", request.userId, request.action);
 
         TrackRequestBody body = new TrackRequestBody();
@@ -103,21 +102,19 @@ public class AuthsignalClient {
                 .thenApply(response -> new Gson().fromJson(response.body(), TrackResponse.class));
     }
 
-    public CompletableFuture<ValidateChallengeResponse> validateChallenge(ValidateChallengeRequest request)
-            throws AuthsignalException {
+    public CompletableFuture<ValidateChallengeResponse> validateChallenge(ValidateChallengeRequest request) {
 
         return postRequest("/validate", new Gson().toJson(request))
                 .thenApply(response -> new Gson().fromJson(response.body(), ValidateChallengeResponse.class));
     }
 
-    public CompletableFuture<ActionResponse> getAction(ActionRequest request) throws AuthsignalException {
+    public CompletableFuture<ActionResponse> getAction(ActionRequest request) {
         String path = String.format("/users/%s/actions/%s/%s", request.userId, request.action, request.idempotencyKey);
 
         return getRequest(path).thenApply(response -> new Gson().fromJson(response.body(), ActionResponse.class));
     }
 
-    public CompletableFuture<ActionResponse> updateActionState(UpdateActionStateRequest request)
-            throws AuthsignalException {
+    public CompletableFuture<ActionResponse> updateActionState(UpdateActionStateRequest request) {
         String path = String.format("/users/%s/actions/%s/%s", request.userId, request.action, request.idempotencyKey);
 
         UpdateActionStateRequestBody body = new UpdateActionStateRequestBody();
@@ -159,7 +156,7 @@ public class AuthsignalClient {
 
     }
 
-    private CompletableFuture<HttpResponse<String>> postRequest(String path, String body) throws AuthsignalException {
+    private CompletableFuture<HttpResponse<String>> postRequest(String path, String body) {
         HttpClient client = HttpClient.newHttpClient();
 
         URI uri;
@@ -182,7 +179,7 @@ public class AuthsignalClient {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private CompletableFuture<HttpResponse<String>> patchRequest(String path, String body) throws AuthsignalException {
+    private CompletableFuture<HttpResponse<String>> patchRequest(String path, String body) {
         HttpClient client = HttpClient.newHttpClient();
         URI uri;
 
@@ -204,7 +201,7 @@ public class AuthsignalClient {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private CompletableFuture<HttpResponse<String>> deleteRequest(String path) throws AuthsignalException {
+    private CompletableFuture<HttpResponse<String>> deleteRequest(String path) {
         HttpClient client = HttpClient.newHttpClient();
 
         URI uri;
