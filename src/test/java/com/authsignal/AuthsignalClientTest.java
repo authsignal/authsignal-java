@@ -46,6 +46,15 @@ public class AuthsignalClientTest {
             fail("should throw ExecutionException");
         } catch (ExecutionException e) {
             assertTrue("cause should be an AuthsignalException", e.getCause() instanceof AuthsignalException);
+
+            AuthsignalException exception = (AuthsignalException) e.getCause();
+            String errorCode = exception.getErrorCode();
+            String errorDescription = exception.getErrorDescription();
+
+            assertTrue("error code should be unauthorized", errorCode.equals("unauthorized"));
+
+            String expectedDescription = "The request is unauthorized. Check that your API key and region base URL are correctly configured.";
+            assertTrue("error code should be unauthorized", errorDescription.equals(expectedDescription));
         } catch (Exception e) {
             fail("should not throw any other exception");
         }

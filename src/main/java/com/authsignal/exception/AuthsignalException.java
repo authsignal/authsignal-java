@@ -13,6 +13,18 @@ public class AuthsignalException extends Exception {
         this.errorDescription = errorDescription;
     }
 
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public String getErrorDescription() {
+        return errorDescription;
+    }
+
     private static String formatMessage(int statusCode, String errorCode, String errorDescription) {
         String description = formatDescription(errorCode, errorDescription);
 
