@@ -57,8 +57,8 @@ public class AuthsignalClient {
     public CompletableFuture<UserAuthenticator[]> getAuthenticators(UserRequest request) throws AuthsignalException {
         String path = String.format("/users/%s/authenticators", request.userId);
 
-        return getRequest(path).thenApply(
-                response -> new Gson().fromJson(response.body(), UserAuthenticator[].class));
+        return getRequest(path)
+                .thenApply(response -> new Gson().fromJson(response.body(), UserAuthenticator[].class));
     }
 
     public CompletableFuture<EnrollVerifiedAuthenticatorResponse> enrollVerifiedAuthenticator(
@@ -128,7 +128,7 @@ public class AuthsignalClient {
                 .thenApply(response -> new Gson().fromJson(response.body(), ActionResponse.class));
     }
 
-    private CompletableFuture<HttpResponse<String>> getRequest(String path) throws AuthsignalException {
+    private CompletableFuture<HttpResponse<String>> getRequest(String path) {
         HttpClient client = HttpClient.newHttpClient();
 
         URI uri;
@@ -136,7 +136,9 @@ public class AuthsignalClient {
         try {
             uri = new URI(_baseURL + path);
         } catch (URISyntaxException ex) {
-            throw new InvalidBaseURLException();
+            CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+            future.completeExceptionally(new InvalidBaseURLException());
+            return future;
         }
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -145,7 +147,16 @@ public class AuthsignalClient {
                 .GET()
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenCompose(response -> {
+            if (isSuccessStatusCode(response.statusCode())) {
+                return CompletableFuture.completedFuture(response);
+            } else {
+                CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                future.completeExceptionally(mapToAuthsignalException(response));
+                return future;
+            }
+        });
+
     }
 
     private CompletableFuture<HttpResponse<String>> postRequest(String path, String body) throws AuthsignalException {
@@ -156,7 +167,9 @@ public class AuthsignalClient {
         try {
             uri = new URI(_baseURL + path);
         } catch (URISyntaxException ex) {
-            throw new InvalidBaseURLException();
+            CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+            future.completeExceptionally(new InvalidBaseURLException());
+            return future;
         }
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -171,13 +184,14 @@ public class AuthsignalClient {
 
     private CompletableFuture<HttpResponse<String>> patchRequest(String path, String body) throws AuthsignalException {
         HttpClient client = HttpClient.newHttpClient();
-
         URI uri;
 
         try {
             uri = new URI(_baseURL + path);
         } catch (URISyntaxException ex) {
-            throw new InvalidBaseURLException();
+            CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+            future.completeExceptionally(new InvalidBaseURLException());
+            return future;
         }
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -198,7 +212,9 @@ public class AuthsignalClient {
         try {
             uri = new URI(_baseURL + path);
         } catch (URISyntaxException ex) {
-            throw new InvalidBaseURLException();
+            CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+            future.completeExceptionally(new InvalidBaseURLException());
+            return future;
         }
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -212,5 +228,15 @@ public class AuthsignalClient {
 
     private String getBasicAuthHeader() {
         return "Basic " + Base64.getEncoder().encodeToString((this._secret + ":").getBytes());
+    }
+
+    private AuthsignalException mapToAuthsignalException(HttpResponse<String> response) {
+        AuthsignalErrorResponse errorResponse = new Gson().fromJson(response.body(), AuthsignalErrorResponse.class);
+
+        return new AuthsignalException(response.statusCode(), errorResponse.error, errorResponse.errorDescription);
+    }
+
+    private boolean isSuccessStatusCode(int statusCode) {
+        return statusCode >= 200 && statusCode <= 299;
     }
 }

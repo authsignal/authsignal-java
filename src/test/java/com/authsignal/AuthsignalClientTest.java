@@ -16,8 +16,9 @@ import java.util.Properties;
 import java.util.UUID;
 
 public class AuthsignalClientTest {
-    private final String userId;
-    private final String action;
+    private final String userId = UUID.randomUUID().toString();
+    private final String action = "signIn";
+    private final String baseURL;
 
     private AuthsignalClient client;
 
@@ -25,17 +26,34 @@ public class AuthsignalClientTest {
         Properties localProperties = new Properties();
         localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
 
-        String secret = localProperties.getProperty("test.secret");
-        String baseURL = localProperties.getProperty("test.baseURL");
+        baseURL = localProperties.getProperty("test.baseURL");
 
-        action = localProperties.getProperty("test.action");
-        userId = UUID.randomUUID().toString();
+        String secret = localProperties.getProperty("test.secret");
 
         client = new AuthsignalClient(secret, baseURL);
     }
 
     @Test
-    public void testUserEnrolledWithEmailOTP() throws AuthsignalException, InterruptedException, ExecutionException {
+    public void testInvalidApiSecretKey() {
+        AuthsignalClient invalidClient = new AuthsignalClient("invalid_secret", baseURL);
+
+        UserRequest userRequest = new UserRequest();
+        userRequest.userId = userId;
+
+        try {
+            invalidClient.getUser(userRequest).get();
+
+            fail("should throw ExecutionException");
+        } catch (ExecutionException e) {
+            assertTrue("cause should be an AuthsignalException", e.getCause() instanceof AuthsignalException);
+        } catch (Exception e) {
+            fail("should not throw any other exception");
+        }
+    }
+
+    @Test
+    public void testUserEnrolledWithEmailOTP() throws AuthsignalException,
+            InterruptedException, ExecutionException {
         CompletableFuture<Boolean> isValid = testEnrollVerifiedAuthenticator().thenCompose(enrollResponse -> {
             assertNotNull("enrollResponse should exist", enrollResponse);
 
@@ -66,11 +84,6 @@ public class AuthsignalClientTest {
         });
 
         System.out.println("isValid: " + isValid.get());
-    }
-
-    @Test
-    public void testInvalidApiSecretKey() throws AuthsignalException {
-
     }
 
     private CompletableFuture<EnrollVerifiedAuthenticatorResponse> testEnrollVerifiedAuthenticator() {

@@ -1,7 +1,7 @@
 package com.authsignal.exception;
 
-public class InvalidBaseURLException extends AuthsignalException {
+public class InvalidBaseURLException extends Exception {
     public InvalidBaseURLException() {
-        super("INVALID_BASE_URL");
+        super("The base URL format is invalid.");
     }
 }
