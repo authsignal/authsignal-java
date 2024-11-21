@@ -134,7 +134,7 @@ public class AuthsignalClient {
             uri = new URI(_baseURL + path);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-            future.completeExceptionally(new InvalidBaseURLException());
+            future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
 
@@ -165,7 +165,7 @@ public class AuthsignalClient {
             uri = new URI(_baseURL + path);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-            future.completeExceptionally(new InvalidBaseURLException());
+            future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
 
@@ -187,7 +187,7 @@ public class AuthsignalClient {
             uri = new URI(_baseURL + path);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-            future.completeExceptionally(new InvalidBaseURLException());
+            future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
 
@@ -210,7 +210,7 @@ public class AuthsignalClient {
             uri = new URI(_baseURL + path);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-            future.completeExceptionally(new InvalidBaseURLException());
+            future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
 

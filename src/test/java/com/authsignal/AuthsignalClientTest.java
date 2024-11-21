@@ -211,4 +211,35 @@ public class AuthsignalClientTest {
             fail("should not throw any exception");
         }
     }
+
+    @Test
+    public void testPasskeyAuthenticator() {
+        String userId = "b60429a1-6288-43dc-80c0-6a3e73dd51b9";
+
+        UserRequest userRequest = new UserRequest();
+        userRequest.userId = userId;
+
+        try {
+            UserAuthenticator[] authenticators = client.getAuthenticators(userRequest).get();
+
+            System.out.println(authenticators.length);
+
+            assertNotNull("authenticators should exist", authenticators);
+            assertTrue("authenticators should not be empty", authenticators.length > 0);
+
+            for (UserAuthenticator authenticator : authenticators) {
+                if (authenticator.verificationMethod == VerificationMethodType.PASSKEY) {
+                    String name = authenticator.webauthnCredential.aaguidMapping.name;
+
+                    assertTrue("should be a known passkey backend",
+                            name.equals("Google Password Manager") || name.equals("iCloud Keychain"));
+                }
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+
+            fail("should not throw any exception");
+        }
+    }
 }
