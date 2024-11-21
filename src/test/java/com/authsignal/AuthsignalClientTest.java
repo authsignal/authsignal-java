@@ -1,11 +1,10 @@
 package com.authsignal;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import com.authsignal.exception.AuthsignalException;
 import com.authsignal.model.*;
-
-import static org.junit.Assert.*;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -233,6 +232,8 @@ public class AuthsignalClientTest {
 
                     assertTrue("should be a known passkey backend",
                             name.equals("Google Password Manager") || name.equals("iCloud Keychain"));
+
+                    assertTrue(authenticator.webauthnCredential.parsedUserAgent.browser.name.equals("Chrome"));
                 }
             }
 

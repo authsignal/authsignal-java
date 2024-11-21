@@ -9,4 +9,5 @@ public class WebauthnCredential {
     public boolean credentialBackedUp;
     public String credentialDeviceType;
     public String authenticatorAttachment;
+    public UserAgent parsedUserAgent;
 }
