@@ -77,7 +77,7 @@ public class AuthsignalClient {
     }
 
     public CompletableFuture<ValidateChallengeResponse> validateChallenge(ValidateChallengeRequest request) {
-        return postRequest("/validate", new Gson().toJson(request.attributes))
+        return postRequest("/validate", new Gson().toJson(request))
                 .thenApply(response -> new Gson().fromJson(response.body(), ValidateChallengeResponse.class));
     }
 

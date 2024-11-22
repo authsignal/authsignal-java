@@ -1,5 +1,7 @@
 package com.authsignal.model;
 
 public class ValidateChallengeRequest extends ApiModel {
-    public ValidateChallengeAttributes attributes;
+    public String token;
+    public String userId;
+    public String action;
 }

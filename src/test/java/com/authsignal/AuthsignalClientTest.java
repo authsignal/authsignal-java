@@ -193,8 +193,7 @@ public class AuthsignalClientTest {
             String idempotencyKey = trackResponse.idempotencyKey;
 
             ValidateChallengeRequest validateRequest = new ValidateChallengeRequest();
-            validateRequest.attributes = new ValidateChallengeAttributes();
-            validateRequest.attributes.token = trackResponse.token;
+            validateRequest.token = trackResponse.token;
 
             ValidateChallengeResponse validateResponse = client.validateChallenge(validateRequest).get();
 
