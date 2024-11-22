@@ -35,7 +35,7 @@ public class AuthsignalClientTest {
 
         String userId = UUID.randomUUID().toString();
 
-        UserRequest userRequest = new UserRequest();
+        GetUserRequest userRequest = new GetUserRequest();
         userRequest.userId = userId;
 
         try {
@@ -64,8 +64,9 @@ public class AuthsignalClientTest {
 
         EnrollVerifiedAuthenticatorRequest enrollRequest = new EnrollVerifiedAuthenticatorRequest();
         enrollRequest.userId = userId;
-        enrollRequest.verificationMethod = VerificationMethodType.SMS;
-        enrollRequest.phoneNumber = "+6427000000";
+        enrollRequest.attributes = new EnrollVerifiedAuthenticatorAttributes();
+        enrollRequest.attributes.verificationMethod = VerificationMethodType.SMS;
+        enrollRequest.attributes.phoneNumber = "+6427000000";
 
         try {
             EnrollVerifiedAuthenticatorResponse enrollResponse = client.enrollVerifiedAuthenticator(enrollRequest)
@@ -73,35 +74,43 @@ public class AuthsignalClientTest {
 
             assertNotNull("enrollResponse should exist", enrollResponse);
 
-            UserRequest userRequest = new UserRequest();
+            GetUserRequest userRequest = new GetUserRequest();
             userRequest.userId = userId;
 
-            UserResponse userResponse = client.getUser(userRequest).get();
+            GetUserResponse userResponse = client.getUser(userRequest).get();
 
             assertNotNull("userResponse should exist", userResponse);
             assertTrue("user should be enrolled", userResponse.isEnrolled);
             assertNull("email should be null", userResponse.email);
 
             UpdateUserRequest updateUserRequest = new UpdateUserRequest();
-            updateUserRequest.email = "test@example.com";
-            updateUserRequest.phoneNumber = "+6427123456";
-            updateUserRequest.username = "Test User";
-            updateUserRequest.displayName = "test@example.com";
-            updateUserRequest.custom = new HashMap<>();
-            updateUserRequest.custom.put("foo", "bar");
+            updateUserRequest.userId = userId;
+            updateUserRequest.attributes = new UserAttributes();
+            updateUserRequest.attributes.email = "test@example.com";
+            updateUserRequest.attributes.phoneNumber = "+6427123456";
+            updateUserRequest.attributes.username = "Test User";
+            updateUserRequest.attributes.displayName = "test@example.com";
+            updateUserRequest.attributes.custom = new HashMap<>();
+            updateUserRequest.attributes.custom.put("foo", "bar");
 
-            UpdateUserResponse updateUserResponse = client.updateUser(updateUserRequest).get();
+            UserAttributes updatedAttributes = client.updateUser(updateUserRequest).get();
 
-            assertNotNull("updateUserResponse should exist", updateUserResponse);
-            assertEquals("email should match", updateUserRequest.email, updateUserResponse.email);
-            assertEquals("phoneNumber should match", updateUserRequest.phoneNumber, updateUserResponse.phoneNumber);
-            assertEquals("username should match", updateUserRequest.username, updateUserResponse.username);
-            assertEquals("displayName should match", updateUserRequest.displayName, updateUserResponse.displayName);
-            assertEquals("custom data should match", "bar", updateUserResponse.custom.get("foo"));
+            assertNotNull("updatedUserAttributes should exist", updatedAttributes);
+            assertEquals("email should match", updateUserRequest.attributes.email, updatedAttributes.email);
+            assertEquals("phoneNumber should match", updateUserRequest.attributes.phoneNumber,
+                    updatedAttributes.phoneNumber);
+            assertEquals("username should match", updateUserRequest.attributes.username,
+                    updatedAttributes.username);
+            assertEquals("displayName should match", updateUserRequest.attributes.displayName,
+                    updatedAttributes.displayName);
+            assertEquals("custom data should match", "bar", updateUserRequest.attributes.custom.get("foo"));
 
-            client.deleteUser(userRequest).get();
+            DeleteUserRequest deleteUserRequest = new DeleteUserRequest();
+            deleteUserRequest.userId = userId;
 
-            UserResponse deletedUserResponse = client.getUser(userRequest).get();
+            client.deleteUser(deleteUserRequest).get();
+
+            GetUserResponse deletedUserResponse = client.getUser(userRequest).get();
 
             assertFalse("user should not be enrolled", deletedUserResponse.isEnrolled);
         } catch (Exception e) {
@@ -117,8 +126,9 @@ public class AuthsignalClientTest {
 
         EnrollVerifiedAuthenticatorRequest enrollRequest = new EnrollVerifiedAuthenticatorRequest();
         enrollRequest.userId = userId;
-        enrollRequest.verificationMethod = VerificationMethodType.SMS;
-        enrollRequest.phoneNumber = "+6427000000";
+        enrollRequest.attributes = new EnrollVerifiedAuthenticatorAttributes();
+        enrollRequest.attributes.verificationMethod = VerificationMethodType.SMS;
+        enrollRequest.attributes.phoneNumber = "+6427000000";
 
         try {
             EnrollVerifiedAuthenticatorResponse enrollResponse = client.enrollVerifiedAuthenticator(enrollRequest)
@@ -126,10 +136,10 @@ public class AuthsignalClientTest {
 
             assertNotNull("enrollResponse should exist", enrollResponse);
 
-            UserRequest userRequest = new UserRequest();
-            userRequest.userId = userId;
+            GetAuthenticatorsRequest authenticatorsRequest = new GetAuthenticatorsRequest();
+            authenticatorsRequest.userId = userId;
 
-            UserAuthenticator[] authenticators = client.getAuthenticators(userRequest).get();
+            UserAuthenticator[] authenticators = client.getAuthenticators(authenticatorsRequest).get();
 
             assertNotNull("authenticators should exist", authenticators);
             assertTrue("authenticators should not be empty", authenticators.length > 0);
@@ -145,7 +155,7 @@ public class AuthsignalClientTest {
 
             client.deleteAuthenticator(deleteAuthenticatorRequest).get();
 
-            UserAuthenticator[] emptyAuthenticators = client.getAuthenticators(userRequest).get();
+            UserAuthenticator[] emptyAuthenticators = client.getAuthenticators(authenticatorsRequest).get();
 
             assertTrue("authenticators should be empty", emptyAuthenticators.length == 0);
         } catch (Exception e) {
@@ -161,8 +171,9 @@ public class AuthsignalClientTest {
 
         EnrollVerifiedAuthenticatorRequest enrollRequest = new EnrollVerifiedAuthenticatorRequest();
         enrollRequest.userId = userId;
-        enrollRequest.verificationMethod = VerificationMethodType.SMS;
-        enrollRequest.phoneNumber = "+6427000000";
+        enrollRequest.attributes = new EnrollVerifiedAuthenticatorAttributes();
+        enrollRequest.attributes.verificationMethod = VerificationMethodType.SMS;
+        enrollRequest.attributes.phoneNumber = "+6427000000";
 
         try {
             EnrollVerifiedAuthenticatorResponse enrollResponse = client.enrollVerifiedAuthenticator(enrollRequest)
@@ -182,7 +193,8 @@ public class AuthsignalClientTest {
             String idempotencyKey = trackResponse.idempotencyKey;
 
             ValidateChallengeRequest validateRequest = new ValidateChallengeRequest();
-            validateRequest.token = trackResponse.token;
+            validateRequest.attributes = new ValidateChallengeAttributes();
+            validateRequest.attributes.token = trackResponse.token;
 
             ValidateChallengeResponse validateResponse = client.validateChallenge(validateRequest).get();
 
@@ -193,17 +205,18 @@ public class AuthsignalClientTest {
             assertEquals("user should match", userId, validateResponse.userId);
             assertEquals("action should match", trackRequest.action, validateResponse.action);
 
-            UpdateActionStateRequest updateActionRequest = new UpdateActionStateRequest();
+            UpdateActionRequest updateActionRequest = new UpdateActionRequest();
             updateActionRequest.userId = userId;
             updateActionRequest.action = trackRequest.action;
             updateActionRequest.idempotencyKey = idempotencyKey;
-            updateActionRequest.state = UserActionState.REVIEW_REQUIRED;
+            updateActionRequest.attributes = new ActionAttributes();
+            updateActionRequest.attributes.state = UserActionState.REVIEW_REQUIRED;
 
-            ActionResponse updateActionResponse = client.updateActionState(updateActionRequest).get();
+            ActionAttributes updatedAttributes = client.updateAction(updateActionRequest).get();
 
-            assertNotNull("updateActionResponse should exist", updateActionResponse);
+            assertNotNull("updatedAttributes should exist", updatedAttributes);
             assertEquals("state should be REVIEW_REQUIRED", UserActionState.REVIEW_REQUIRED,
-                    updateActionResponse.state);
+                    updatedAttributes.state);
         } catch (Exception e) {
             System.out.println(e.getMessage());
 
@@ -215,11 +228,11 @@ public class AuthsignalClientTest {
     public void testPasskeyAuthenticator() {
         String userId = "b60429a1-6288-43dc-80c0-6a3e73dd51b9";
 
-        UserRequest userRequest = new UserRequest();
-        userRequest.userId = userId;
+        GetAuthenticatorsRequest authenticatorsRequest = new GetAuthenticatorsRequest();
+        authenticatorsRequest.userId = userId;
 
         try {
-            UserAuthenticator[] authenticators = client.getAuthenticators(userRequest).get();
+            UserAuthenticator[] authenticators = client.getAuthenticators(authenticatorsRequest).get();
 
             System.out.println(authenticators.length);
 

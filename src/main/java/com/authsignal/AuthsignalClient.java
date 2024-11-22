@@ -26,35 +26,27 @@ public class AuthsignalClient {
         this._baseURL = "https://api.authsignal.com/v1";
     }
 
-    public CompletableFuture<UserResponse> getUser(UserRequest request) {
+    public CompletableFuture<GetUserResponse> getUser(GetUserRequest request) {
         String path = String.format("/users/%s", request.userId);
 
         return getRequest(path).thenApply(
-                response -> new Gson().fromJson(response.body(), UserResponse.class));
+                response -> new Gson().fromJson(response.body(), GetUserResponse.class));
     }
 
-    public CompletableFuture<UpdateUserResponse> updateUser(UpdateUserRequest request) {
+    public CompletableFuture<UserAttributes> updateUser(UpdateUserRequest request) {
         String path = String.format("/users/%s", request.userId);
 
-        UpdateUserRequestBody body = new UpdateUserRequestBody();
-
-        body.email = request.email;
-        body.phoneNumber = request.phoneNumber;
-        body.username = request.username;
-        body.displayName = request.displayName;
-        body.custom = request.custom;
-
-        return postRequest(path, new Gson().toJson(body))
-                .thenApply(response -> new Gson().fromJson(response.body(), UpdateUserResponse.class));
+        return postRequest(path, new Gson().toJson(request.attributes))
+                .thenApply(response -> new Gson().fromJson(response.body(), UserAttributes.class));
     }
 
-    public CompletableFuture<Void> deleteUser(UserRequest request) {
+    public CompletableFuture<Void> deleteUser(DeleteUserRequest request) {
         String path = String.format("/users/%s", request.userId);
 
         return deleteRequest(path).thenApply(response -> null);
     }
 
-    public CompletableFuture<UserAuthenticator[]> getAuthenticators(UserRequest request) {
+    public CompletableFuture<UserAuthenticator[]> getAuthenticators(GetAuthenticatorsRequest request) {
         String path = String.format("/users/%s/authenticators", request.userId);
 
         return getRequest(path)
@@ -65,14 +57,7 @@ public class AuthsignalClient {
             EnrollVerifiedAuthenticatorRequest request) {
         String path = String.format("/users/%s/authenticators", request.userId);
 
-        EnrollVerifiedAuthenticatorRequestBody body = new EnrollVerifiedAuthenticatorRequestBody();
-
-        body.verificationMethod = request.verificationMethod;
-        body.email = request.email;
-        body.phoneNumber = request.phoneNumber;
-        body.isDefault = request.isDefault;
-
-        return postRequest(path, new Gson().toJson(body))
+        return postRequest(path, new Gson().toJson(request.attributes))
                 .thenApply(response -> new Gson().fromJson(response.body(), EnrollVerifiedAuthenticatorResponse.class));
     }
 
@@ -85,44 +70,28 @@ public class AuthsignalClient {
     public CompletableFuture<TrackResponse> track(TrackRequest request) {
         String path = String.format("/users/%s/actions/%s", request.userId, request.action);
 
-        TrackRequestBody body = new TrackRequestBody();
+        TrackAttributes attributes = request.attributes != null ? request.attributes : new TrackAttributes();
 
-        body.idempotencyKey = request.idempotencyKey;
-        body.email = request.email;
-        body.phoneNumber = request.phoneNumber;
-        body.username = request.username;
-        body.redirectUrl = request.redirectUrl;
-        body.ipAddress = request.ipAddress;
-        body.userAgent = request.userAgent;
-        body.deviceId = request.deviceId;
-        body.redirectToSettings = request.redirectToSettings;
-        body.scope = request.scope;
-
-        return postRequest(path, new Gson().toJson(body))
+        return postRequest(path, new Gson().toJson(attributes))
                 .thenApply(response -> new Gson().fromJson(response.body(), TrackResponse.class));
     }
 
     public CompletableFuture<ValidateChallengeResponse> validateChallenge(ValidateChallengeRequest request) {
-
-        return postRequest("/validate", new Gson().toJson(request))
+        return postRequest("/validate", new Gson().toJson(request.attributes))
                 .thenApply(response -> new Gson().fromJson(response.body(), ValidateChallengeResponse.class));
     }
 
-    public CompletableFuture<ActionResponse> getAction(ActionRequest request) {
+    public CompletableFuture<GetActionResponse> getAction(GetActionRequest request) {
         String path = String.format("/users/%s/actions/%s/%s", request.userId, request.action, request.idempotencyKey);
 
-        return getRequest(path).thenApply(response -> new Gson().fromJson(response.body(), ActionResponse.class));
+        return getRequest(path).thenApply(response -> new Gson().fromJson(response.body(), GetActionResponse.class));
     }
 
-    public CompletableFuture<ActionResponse> updateActionState(UpdateActionStateRequest request) {
+    public CompletableFuture<ActionAttributes> updateAction(UpdateActionRequest request) {
         String path = String.format("/users/%s/actions/%s/%s", request.userId, request.action, request.idempotencyKey);
 
-        UpdateActionStateRequestBody body = new UpdateActionStateRequestBody();
-
-        body.state = request.state;
-
-        return patchRequest(path, new Gson().toJson(body))
-                .thenApply(response -> new Gson().fromJson(response.body(), ActionResponse.class));
+        return patchRequest(path, new Gson().toJson(request.attributes))
+                .thenApply(response -> new Gson().fromJson(response.body(), ActionAttributes.class));
     }
 
     private CompletableFuture<HttpResponse<String>> getRequest(String path) {

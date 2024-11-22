@@ -1,5 +1,5 @@
 package com.authsignal.model;
 
-public class UpdateActionStateRequestBody extends ApiModel {
+public class ActionAttributes {
     public UserActionState state;
 }

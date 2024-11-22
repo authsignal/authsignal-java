@@ -2,7 +2,7 @@ package com.authsignal.model;
 
 import java.util.Map;
 
-public class UpdateUserRequestBody extends ApiModel {
+public class UserAttributes extends ApiModel {
     public String email;
     public String phoneNumber;
     public String username;
