@@ -1,7 +1,7 @@
 package com.authsignal.model;
 
-public class ActionRequest extends ApiModel {
+public class ValidateChallengeAttributes {
+    public String token;
     public String userId;
     public String action;
-    public String idempotencyKey;
 }
