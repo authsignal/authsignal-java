@@ -1,6 +1,6 @@
 package com.authsignal.model;
 
-public class UserAgent {
+public class UserAgent extends ApiModel {
     public String ua;
     public UserAgentBrowser browser;
     public UserAgentDevice device;
