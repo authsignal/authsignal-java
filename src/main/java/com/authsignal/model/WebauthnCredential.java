@@ -1,6 +1,6 @@
 package com.authsignal.model;
 
-public class WebauthnCredential {
+public class WebauthnCredential extends ApiModel {
     public String credentialId;
     public String deviceId;
     public String name;
