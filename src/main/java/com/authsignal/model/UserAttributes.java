@@ -7,5 +7,5 @@ public class UserAttributes extends ApiModel {
     public String phoneNumber;
     public String username;
     public String displayName;
-    public Map<String, String> custom;
+    public Map<String, Object> custom;
 }

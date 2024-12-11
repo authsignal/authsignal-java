@@ -92,6 +92,7 @@ public class AuthsignalClientTest {
             updateUserRequest.attributes.displayName = "test@example.com";
             updateUserRequest.attributes.custom = new HashMap<>();
             updateUserRequest.attributes.custom.put("foo", "bar");
+            updateUserRequest.attributes.custom.put("baz", 1);
 
             UserAttributes updatedAttributes = client.updateUser(updateUserRequest).get();
 
@@ -184,6 +185,10 @@ public class AuthsignalClientTest {
             TrackRequest trackRequest = new TrackRequest();
             trackRequest.userId = userId;
             trackRequest.action = "signIn";
+            trackRequest.attributes = new TrackAttributes();
+            trackRequest.attributes.custom = new HashMap<>();
+            trackRequest.attributes.custom.put("foo", "bar");
+            trackRequest.attributes.custom.put("baz", 1);
 
             TrackResponse trackResponse = client.track(trackRequest).get();
 

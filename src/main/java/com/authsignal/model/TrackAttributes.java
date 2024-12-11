@@ -1,5 +1,7 @@
 package com.authsignal.model;
 
+import java.util.Map;
+
 public class TrackAttributes extends ApiModel {
     public String idempotencyKey;
     public String email;
@@ -11,4 +13,5 @@ public class TrackAttributes extends ApiModel {
     public String deviceId;
     public String scope;
     public Boolean redirectToSettings;
+    public Map<String, Object> custom;
 }
