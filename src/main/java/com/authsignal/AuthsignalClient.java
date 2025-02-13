@@ -13,13 +13,15 @@ import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class AuthsignalClient {
     private String _secret;
     private String _baseURL;
-    private static final int DEFAULT_RETRIES = 1;
+    private static final int DEFAULT_RETRIES = 2;
     private static final List<String> RETRY_ERROR_CODES = Arrays.asList("ECONNRESET", "EPIPE", "ECONNREFUSED");
     private static final List<String> SAFE_HTTP_METHODS = Arrays.asList("GET", "HEAD", "OPTIONS");
+    private Optional<RetryListener> retryListener = Optional.empty();
 
     public AuthsignalClient(String secret, String baseURL) {
         this._secret = secret;
@@ -29,6 +31,10 @@ public class AuthsignalClient {
     public AuthsignalClient(String secret) {
         this._secret = secret;
         this._baseURL = "https://api.authsignal.com/v1";
+    }
+
+    public void setRetryListener(RetryListener listener) {
+        this.retryListener = Optional.of(listener);
     }
 
     public CompletableFuture<GetUserResponse> getUser(GetUserRequest request) {
@@ -213,6 +219,9 @@ public class AuthsignalClient {
             .handle((response, throwable) -> {
                 if (throwable != null) {
                     if (retries > 0 && isRetryableError(throwable, request.method())) {
+                        retryListener.ifPresent(listener -> {
+                            listener.onRetry(DEFAULT_RETRIES - retries + 1, throwable);
+                        });
                         return executeWithRetry(request, retries - 1);
                     }
                     CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
@@ -224,6 +233,7 @@ public class AuthsignalClient {
                     response.statusCode() >= 500 && 
                     response.statusCode() <= 599 && 
                     SAFE_HTTP_METHODS.contains(request.method())) {
+                    retryListener.ifPresent(listener -> listener.onRetry(DEFAULT_RETRIES - retries + 1, null));
                     return executeWithRetry(request, retries - 1);
                 }
                 
@@ -232,17 +242,32 @@ public class AuthsignalClient {
     }
 
     private boolean isRetryableError(Throwable error, String method) {
-        if (error instanceof java.net.ConnectException ||
-            error instanceof java.net.SocketException) {
+        // Unwrap CompletionException to get the actual cause
+        Throwable actualError = error;
+        if (error instanceof java.util.concurrent.CompletionException && error.getCause() != null) {
+            actualError = error.getCause();
+            System.out.println("  Unwrapped to: " + actualError.getClass().getName());
+        }
+
+        if (actualError instanceof java.net.ConnectException) {
+            System.out.println("  ✓ Is ConnectException");
+            return true;
+        }
+        
+        if (actualError instanceof java.net.SocketException) {
+            System.out.println("  ✓ Is SocketException");
             return true;
         }
 
-        String errorMessage = error.getMessage();
+        String errorMessage = actualError.getMessage();
         if (errorMessage != null) {
-            return RETRY_ERROR_CODES.stream()
+            boolean hasRetryCode = RETRY_ERROR_CODES.stream()
                 .anyMatch(code -> errorMessage.contains(code));
+            System.out.println("  " + (hasRetryCode ? "✓" : "✗") + " Contains retry error code");
+            return hasRetryCode;
         }
 
+        System.out.println("  ✗ No retryable conditions met");
         return false;
     }
 }

@@ -13,6 +13,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.UUID;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpHeaders;
 
 public class AuthsignalClientTest {
     private final String baseURL;
@@ -258,6 +266,30 @@ public class AuthsignalClientTest {
             System.out.println(e.getMessage());
 
             fail("should not throw any exception");
+        }
+    }
+
+    @Test
+    public void testConnectException() {
+        AuthsignalClient unreachableClient = new AuthsignalClient("test_secret", "http://localhost:12345");
+        
+        final int[] retryCount = {0};
+        
+        unreachableClient.setRetryListener((attemptNumber, lastError) -> {
+            retryCount[0]++;
+        });
+        
+        GetUserRequest request = new GetUserRequest();
+        request.userId = UUID.randomUUID().toString();
+        
+        try {
+            unreachableClient.getUser(request).get();
+            fail("Should throw ExecutionException with ConnectException cause");
+        } catch (ExecutionException e) {
+            assertTrue("Should be ConnectException", e.getCause() instanceof java.net.ConnectException);
+            assertEquals("Should have retried 2 times", 2, retryCount[0]);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getMessage());
         }
     }
 }
