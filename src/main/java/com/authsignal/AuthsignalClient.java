@@ -21,7 +21,6 @@ public class AuthsignalClient {
     private String _baseURL;
     private int retries;
     private static final long INITIAL_RETRY_DELAY_MS = 100;
-    private static final List<String> RETRY_ERROR_CODES = Arrays.asList("ECONNRESET", "EPIPE", "ECONNREFUSED");
     private static final List<String> SAFE_HTTP_METHODS = Arrays.asList("GET", "HEAD", "OPTIONS");
 
     public AuthsignalClient(String secret, String baseURL) {
@@ -261,13 +260,6 @@ public class AuthsignalClient {
         
         if (actualError instanceof java.io.IOException) {
             return true;
-        }
-
-        String errorMessage = actualError.getMessage();
-        if (errorMessage != null) {
-            boolean hasRetryCode = RETRY_ERROR_CODES.stream()
-                .anyMatch(code -> errorMessage.contains(code));
-            return hasRetryCode;
         }
 
         return false;
