@@ -246,16 +246,13 @@ public class AuthsignalClient {
         Throwable actualError = error;
         if (error instanceof java.util.concurrent.CompletionException && error.getCause() != null) {
             actualError = error.getCause();
-            System.out.println("  Unwrapped to: " + actualError.getClass().getName());
         }
 
         if (actualError instanceof java.net.ConnectException) {
-            System.out.println("  ✓ Is ConnectException");
             return true;
         }
         
         if (actualError instanceof java.io.IOException) {
-            System.out.println("  ✓ Is IOException");
             return true;
         }
 
@@ -263,11 +260,9 @@ public class AuthsignalClient {
         if (errorMessage != null) {
             boolean hasRetryCode = RETRY_ERROR_CODES.stream()
                 .anyMatch(code -> errorMessage.contains(code));
-            System.out.println("  " + (hasRetryCode ? "✓" : "✗") + " Contains retry error code");
             return hasRetryCode;
         }
 
-        System.out.println("  ✗ No retryable conditions met");
         return false;
     }
 }
