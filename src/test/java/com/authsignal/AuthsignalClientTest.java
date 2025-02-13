@@ -13,8 +13,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.UUID;
-import java.net.ServerSocket;
-import java.net.Socket;
 
 public class AuthsignalClientTest {
     private final String baseURL;
