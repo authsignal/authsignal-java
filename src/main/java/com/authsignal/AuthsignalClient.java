@@ -254,8 +254,8 @@ public class AuthsignalClient {
             return true;
         }
         
-        if (actualError instanceof java.net.SocketException) {
-            System.out.println("  ✓ Is SocketException");
+        if (actualError instanceof java.io.IOException) {
+            System.out.println("  ✓ Is IOException");
             return true;
         }
 

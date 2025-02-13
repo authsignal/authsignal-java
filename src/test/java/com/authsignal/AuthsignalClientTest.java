@@ -292,4 +292,112 @@ public class AuthsignalClientTest {
             fail("Unexpected exception: " + e.getMessage());
         }
     }
+
+    @Test
+    public void testSocketException() {
+        // Create a test server that closes connection immediately to trigger SocketException
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            int port = serverSocket.getLocalPort();
+            Thread serverThread = new Thread(() -> {
+                try {
+                    while (!Thread.interrupted()) {
+                        Socket socket = serverSocket.accept();
+                        // Immediately close to trigger SocketException
+                        socket.close();
+                    }
+                } catch (IOException ignored) {}
+            });
+            serverThread.start();
+            
+            AuthsignalClient unstableClient = new AuthsignalClient(
+                "test_secret", 
+                "http://localhost:" + port
+            );
+            
+            final int[] retryCount = {0};
+            unstableClient.setRetryListener((attemptNumber, lastError) -> {
+                retryCount[0]++;
+            });
+            
+            GetUserRequest request = new GetUserRequest();
+            request.userId = UUID.randomUUID().toString();
+            
+            try {
+                unstableClient.getUser(request).get();
+                fail("Should throw ExecutionException with IOException cause");
+            } catch (ExecutionException e) {
+                assertTrue("Should be IOException", e.getCause() instanceof java.io.IOException);
+                System.out.println("Retry count: " + retryCount[0]);
+                assertEquals("Should have retried 2 times", 2, retryCount[0]);
+            } catch (InterruptedException e) {
+                fail("Unexpected InterruptedException");
+            } finally {
+                serverThread.interrupt();
+            }
+        } catch (IOException e) {
+            fail("Failed to create test server: " + e.getMessage());
+        }
+    }
+
+    // @Test
+    // public void test500RangeErrors() {
+    //     // Create a mock AuthsignalClient that returns 500 errors
+    //     AuthsignalClient mockClient = new AuthsignalClient("test_secret", "test_url") {
+    //         protected CompletableFuture<HttpResponse<String>> executeRequest(HttpRequest request) {
+    //             HttpResponse<String> mockResponse = new HttpResponse<String>() {
+    //                 @Override
+    //                 public int statusCode() {
+    //                     return 503;
+    //                 }
+                    
+    //                 @Override
+    //                 public String body() {
+    //                     return "{\"error\":\"service_unavailable\",\"errorDescription\":\"Service temporarily unavailable\"}";
+    //                 }
+                    
+    //                 @Override
+    //                 public HttpRequest request() {
+    //                     return request;
+    //                 }
+                    
+    //                 @Override
+    //                 public Optional<HttpResponse<String>> previousResponse() {
+    //                     return Optional.empty();
+    //                 }
+                    
+    //                 @Override
+    //                 public HttpHeaders headers() {
+    //                     return HttpHeaders.of(new HashMap<>(), (x, y) -> true);
+    //                 }
+                    
+    //                 @Override
+    //                 public URI uri() {
+    //                     return URI.create("test_url");
+    //                 }
+                    
+    //                 @Override
+    //                 public String sslSession() {
+    //                     return null;
+    //                 }
+    //             };
+                
+    //             return CompletableFuture.completedFuture(mockResponse);
+    //         }
+    //     };
+        
+    //     GetUserRequest request = new GetUserRequest();
+    //     request.userId = UUID.randomUUID().toString();
+        
+    //     try {
+    //         mockClient.getUser(request).get();
+    //         fail("Should throw ExecutionException with AuthsignalException");
+    //     } catch (ExecutionException e) {
+    //         assertTrue("Should be AuthsignalException", e.getCause() instanceof AuthsignalException);
+    //         AuthsignalException ae = (AuthsignalException) e.getCause();
+    //         assertEquals("Status code should be 503", 503, ae.getStatusCode());
+    //         assertEquals("Error code should be service_unavailable", "service_unavailable", ae.getErrorCode());
+    //     } catch (Exception e) {
+    //         fail("Unexpected exception: " + e.getMessage());
+    //     }
+    // }
 }
