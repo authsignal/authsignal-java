@@ -21,7 +21,7 @@ public class AuthsignalClient {
     private String _secret;
     private String _baseURL;
     private static final int DEFAULT_RETRIES = 2;
-    private static final long RETRY_DELAY_MS = 100;
+    private static final long INITIAL_RETRY_DELAY_MS = 100;
     private static final List<String> RETRY_ERROR_CODES = Arrays.asList("ECONNRESET", "EPIPE", "ECONNREFUSED");
     private static final List<String> SAFE_HTTP_METHODS = Arrays.asList("GET", "HEAD", "OPTIONS");
     private Optional<RetryListener> retryListener = Optional.empty();
@@ -222,9 +222,10 @@ public class AuthsignalClient {
             .handle((response, throwable) -> {
                 if (throwable != null) {
                     if (retries > 0 && isRetryableError(throwable, request.method())) {
+                        long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2, DEFAULT_RETRIES - retries));
                         retryListener.ifPresent(listener -> listener.onRetry(DEFAULT_RETRIES - retries + 1, throwable));
                         return CompletableFuture.supplyAsync(() -> null, 
-                            CompletableFuture.delayedExecutor(RETRY_DELAY_MS, TimeUnit.MILLISECONDS))
+                            CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
                             .thenCompose(v -> executeWithRetry(request, retries - 1));
                     }
                     CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
@@ -236,9 +237,10 @@ public class AuthsignalClient {
                     response.statusCode() >= 500 && 
                     response.statusCode() <= 599 && 
                     SAFE_HTTP_METHODS.contains(request.method())) {
+                    long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2, DEFAULT_RETRIES - retries));
                     retryListener.ifPresent(listener -> listener.onRetry(DEFAULT_RETRIES - retries + 1, null));
                     return CompletableFuture.supplyAsync(() -> null, 
-                        CompletableFuture.delayedExecutor(RETRY_DELAY_MS, TimeUnit.MILLISECONDS))
+                        CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
                         .thenCompose(v -> executeWithRetry(request, retries - 1));
                 }
                 
