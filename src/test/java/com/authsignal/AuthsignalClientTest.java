@@ -15,12 +15,6 @@ import java.util.Properties;
 import java.util.UUID;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URI;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpHeaders;
 
 public class AuthsignalClientTest {
     private final String baseURL;
