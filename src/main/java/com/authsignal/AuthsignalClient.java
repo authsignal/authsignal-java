@@ -11,19 +11,34 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 
 public class AuthsignalClient {
     private String _secret;
     private String _baseURL;
+    private int retries;
+    private static final long INITIAL_RETRY_DELAY_MS = 100;
+    private static final List<String> SAFE_HTTP_METHODS = Arrays.asList("GET", "HEAD", "OPTIONS");
 
     public AuthsignalClient(String secret, String baseURL) {
+        this(secret, baseURL, 2);
+    }
+
+    public AuthsignalClient(String secret, String baseURL, int retries) {
         this._secret = secret;
         this._baseURL = baseURL;
+        this.retries = retries;
     }
 
     public AuthsignalClient(String secret) {
-        this._secret = secret;
-        this._baseURL = "https://api.authsignal.com/v1";
+        this(secret, "https://api.authsignal.com/v1", 2);
+    }
+
+    public AuthsignalClient(String secret, int retries) {
+        this(secret, "https://api.authsignal.com/v1", retries);
     }
 
     public CompletableFuture<GetUserResponse> getUser(GetUserRequest request) {
@@ -95,101 +110,109 @@ public class AuthsignalClient {
     }
 
     private CompletableFuture<HttpResponse<String>> getRequest(String path) {
-        HttpClient client = HttpClient.newHttpClient();
-
-        URI uri;
-
         try {
-            uri = new URI(_baseURL + path);
+            URI uri = new URI(_baseURL + path);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Authorization", getBasicAuthHeader())
+                    .GET()
+                    .build();
+
+            return executeWithRetry(request, retries)
+                .thenCompose(response -> {
+                    if (isSuccessStatusCode(response.statusCode())) {
+                        return CompletableFuture.completedFuture(response);
+                    } else {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(mapToAuthsignalException(response));
+                        return future;
+                    }
+                });
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .header("Authorization", getBasicAuthHeader())
-                .GET()
-                .build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenCompose(response -> {
-            if (isSuccessStatusCode(response.statusCode())) {
-                return CompletableFuture.completedFuture(response);
-            } else {
-                CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-                future.completeExceptionally(mapToAuthsignalException(response));
-                return future;
-            }
-        });
-
     }
 
     private CompletableFuture<HttpResponse<String>> postRequest(String path, String body) {
-        HttpClient client = HttpClient.newHttpClient();
-
-        URI uri;
-
         try {
-            uri = new URI(_baseURL + path);
+            URI uri = new URI(_baseURL + path);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Authorization", getBasicAuthHeader())
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            return executeWithRetry(request, retries)
+                .thenCompose(response -> {
+                    if (isSuccessStatusCode(response.statusCode())) {
+                        return CompletableFuture.completedFuture(response);
+                    } else {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(mapToAuthsignalException(response));
+                        return future;
+                    }
+                });
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .header("Authorization", getBasicAuthHeader())
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private CompletableFuture<HttpResponse<String>> patchRequest(String path, String body) {
-        HttpClient client = HttpClient.newHttpClient();
-        URI uri;
-
         try {
-            uri = new URI(_baseURL + path);
+            URI uri = new URI(_baseURL + path);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Authorization", getBasicAuthHeader())
+                    .header("Content-Type", "application/json")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            return executeWithRetry(request, retries)
+                .thenCompose(response -> {
+                    if (isSuccessStatusCode(response.statusCode())) {
+                        return CompletableFuture.completedFuture(response);
+                    } else {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(mapToAuthsignalException(response));
+                        return future;
+                    }
+                });
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .header("Authorization", getBasicAuthHeader())
-                .header("Content-Type", "application/json")
-                .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private CompletableFuture<HttpResponse<String>> deleteRequest(String path) {
-        HttpClient client = HttpClient.newHttpClient();
-
-        URI uri;
-
         try {
-            uri = new URI(_baseURL + path);
+            URI uri = new URI(_baseURL + path);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Authorization", getBasicAuthHeader())
+                    .DELETE()
+                    .build();
+
+            return executeWithRetry(request, retries)
+                .thenCompose(response -> {
+                    if (isSuccessStatusCode(response.statusCode())) {
+                        return CompletableFuture.completedFuture(response);
+                    } else {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(mapToAuthsignalException(response));
+                        return future;
+                    }
+                });
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .header("Authorization", getBasicAuthHeader())
-                .DELETE()
-                .build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private String getBasicAuthHeader() {
@@ -204,5 +227,53 @@ public class AuthsignalClient {
 
     private boolean isSuccessStatusCode(int statusCode) {
         return statusCode >= 200 && statusCode <= 299;
+    }
+
+    private CompletableFuture<HttpResponse<String>> executeWithRetry(HttpRequest request, int retriesLeft) {
+        HttpClient client = HttpClient.newHttpClient();
+        long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2, this.retries - retriesLeft));
+
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+            .handle((response, throwable) -> {
+                if (throwable != null) {
+                    if (retriesLeft > 0 && isRetryableClientError(throwable)) {
+                        return CompletableFuture.supplyAsync(() -> null, 
+                            CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
+                            .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
+                    }
+                    CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                    future.completeExceptionally(throwable);
+                    return future;
+                }
+                
+                if (retriesLeft > 0 && isRetryableServerError(response.statusCode(), request.method())) {
+                    return CompletableFuture.supplyAsync(() -> null, 
+                        CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
+                        .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
+                }
+                
+                return CompletableFuture.completedFuture(response);
+            }).thenCompose(future -> future);
+    }
+
+    private boolean isRetryableClientError(Throwable error) {
+        // Unwrap CompletionException to get the actual cause
+        Throwable actualError = error instanceof java.util.concurrent.CompletionException && error.getCause() != null
+                ? error.getCause()
+                : error;
+
+        if (actualError instanceof java.net.ConnectException) {
+            return true;
+        }
+
+        if (actualError instanceof java.io.IOException) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isRetryableServerError(int statusCode, String method) {
+        return statusCode >= 500 && statusCode <= 599 && SAFE_HTTP_METHODS.contains(method);
     }
 }
