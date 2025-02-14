@@ -136,70 +136,83 @@ public class AuthsignalClient {
     }
 
     private CompletableFuture<HttpResponse<String>> postRequest(String path, String body) {
-        HttpClient client = HttpClient.newHttpClient();
-
-        URI uri;
-
         try {
-            uri = new URI(_baseURL + path);
+            URI uri = new URI(_baseURL + path);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Authorization", getBasicAuthHeader())
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            return executeWithRetry(request, retries)
+                .thenCompose(response -> {
+                    if (isSuccessStatusCode(response.statusCode())) {
+                        return CompletableFuture.completedFuture(response);
+                    } else {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(mapToAuthsignalException(response));
+                        return future;
+                    }
+                });
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .header("Authorization", getBasicAuthHeader())
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private CompletableFuture<HttpResponse<String>> patchRequest(String path, String body) {
-        HttpClient client = HttpClient.newHttpClient();
-        URI uri;
-
         try {
-            uri = new URI(_baseURL + path);
+            URI uri = new URI(_baseURL + path);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Authorization", getBasicAuthHeader())
+                    .header("Content-Type", "application/json")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            return executeWithRetry(request, retries)
+                .thenCompose(response -> {
+                    if (isSuccessStatusCode(response.statusCode())) {
+                        return CompletableFuture.completedFuture(response);
+                    } else {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(mapToAuthsignalException(response));
+                        return future;
+                    }
+                });
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .header("Authorization", getBasicAuthHeader())
-                .header("Content-Type", "application/json")
-                .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private CompletableFuture<HttpResponse<String>> deleteRequest(String path) {
-        HttpClient client = HttpClient.newHttpClient();
-
-        URI uri;
-
         try {
-            uri = new URI(_baseURL + path);
+            URI uri = new URI(_baseURL + path);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Authorization", getBasicAuthHeader())
+                    .DELETE()
+                    .build();
+
+            return executeWithRetry(request, retries)
+                .thenCompose(response -> {
+                    if (isSuccessStatusCode(response.statusCode())) {
+                        return CompletableFuture.completedFuture(response);
+                    } else {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(mapToAuthsignalException(response));
+                        return future;
+                    }
+                });
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
             return future;
         }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .header("Authorization", getBasicAuthHeader())
-                .DELETE()
-                .build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private String getBasicAuthHeader() {
