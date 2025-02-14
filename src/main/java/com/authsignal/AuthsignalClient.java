@@ -236,7 +236,7 @@ public class AuthsignalClient {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
             .handle((response, throwable) -> {
                 if (throwable != null) {
-                    if (retriesLeft > 0 && isRetryableClientError(throwable, request.method())) {
+                    if (retriesLeft > 0 && isRetryableClientError(throwable)) {
                         return CompletableFuture.supplyAsync(() -> null, 
                             CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
                             .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
