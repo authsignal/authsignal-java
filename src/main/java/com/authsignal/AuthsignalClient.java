@@ -218,12 +218,12 @@ public class AuthsignalClient {
 
     private CompletableFuture<HttpResponse<String>> executeWithRetry(HttpRequest request, int retriesLeft) {
         HttpClient client = HttpClient.newHttpClient();
-        
+        long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2, this.retries - retriesLeft));
+
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
             .handle((response, throwable) -> {
                 if (throwable != null) {
                     if (retriesLeft > 0 && isRetryableError(throwable, request.method())) {
-                        long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2, this.retries - retriesLeft));
                         return CompletableFuture.supplyAsync(() -> null, 
                             CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
                             .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
@@ -233,11 +233,7 @@ public class AuthsignalClient {
                     return future;
                 }
                 
-                if (retriesLeft > 0 && 
-                    response.statusCode() >= 500 && 
-                    response.statusCode() <= 599 && 
-                    SAFE_HTTP_METHODS.contains(request.method())) {
-                    long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2, this.retries - retriesLeft));
+                if (retriesLeft > 0 && isRetryableError(response.statusCode(), request.method())) {
                     return CompletableFuture.supplyAsync(() -> null, 
                         CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
                         .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
@@ -249,19 +245,22 @@ public class AuthsignalClient {
 
     private boolean isRetryableError(Throwable error, String method) {
         // Unwrap CompletionException to get the actual cause
-        Throwable actualError = error;
-        if (error instanceof java.util.concurrent.CompletionException && error.getCause() != null) {
-            actualError = error.getCause();
-        }
+        Throwable actualError = error instanceof java.util.concurrent.CompletionException && error.getCause() != null
+                ? error.getCause()
+                : error;
 
         if (actualError instanceof java.net.ConnectException) {
             return true;
         }
-        
+
         if (actualError instanceof java.io.IOException) {
             return true;
         }
 
         return false;
+    }
+
+    private boolean isRetryableError(int statusCode, String method) {
+        return statusCode >= 500 && statusCode <= 599 && SAFE_HTTP_METHODS.contains(method);
     }
 }
