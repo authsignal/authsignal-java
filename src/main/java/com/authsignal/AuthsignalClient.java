@@ -236,7 +236,7 @@ public class AuthsignalClient {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
             .handle((response, throwable) -> {
                 if (throwable != null) {
-                    if (retriesLeft > 0 && isRetryableError(throwable, request.method())) {
+                    if (retriesLeft > 0 && isRetryableClientError(throwable, request.method())) {
                         return CompletableFuture.supplyAsync(() -> null, 
                             CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
                             .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
@@ -246,7 +246,7 @@ public class AuthsignalClient {
                     return future;
                 }
                 
-                if (retriesLeft > 0 && isRetryableError(response.statusCode(), request.method())) {
+                if (retriesLeft > 0 && isRetryableServerError(response.statusCode(), request.method())) {
                     return CompletableFuture.supplyAsync(() -> null, 
                         CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
                         .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
@@ -256,7 +256,7 @@ public class AuthsignalClient {
             }).thenCompose(future -> future);
     }
 
-    private boolean isRetryableError(Throwable error, String method) {
+    private boolean isRetryableClientError(Throwable error) {
         // Unwrap CompletionException to get the actual cause
         Throwable actualError = error instanceof java.util.concurrent.CompletionException && error.getCause() != null
                 ? error.getCause()
@@ -273,7 +273,7 @@ public class AuthsignalClient {
         return false;
     }
 
-    private boolean isRetryableError(int statusCode, String method) {
+    private boolean isRetryableServerError(int statusCode, String method) {
         return statusCode >= 500 && statusCode <= 599 && SAFE_HTTP_METHODS.contains(method);
     }
 }
