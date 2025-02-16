@@ -230,6 +230,7 @@ public class AuthsignalClient {
             return false;
         }
 
+        // Retry on network errors thrown by HTTP client
         if (error != null) {
             Throwable actualError = error instanceof java.util.concurrent.CompletionException
                     && error.getCause() != null
