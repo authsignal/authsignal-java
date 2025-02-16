@@ -10,22 +10,18 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Executors;
 
 public class AuthsignalClient {
     private String _secret;
     private String _baseURL;
     private int retries;
-    private static final long INITIAL_RETRY_DELAY_MS = 100;
-    private static final List<String> SAFE_HTTP_METHODS = Arrays.asList("GET", "HEAD", "OPTIONS");
 
-    public AuthsignalClient(String secret, String baseURL) {
-        this(secret, baseURL, 2);
-    }
+    private static final String DEFAULT_API_URL = "https://api.authsignal.com/v1";
+    private static final int DEFAULT_RETRIES = 2;
 
     public AuthsignalClient(String secret, String baseURL, int retries) {
         this._secret = secret;
@@ -33,12 +29,16 @@ public class AuthsignalClient {
         this.retries = retries;
     }
 
-    public AuthsignalClient(String secret) {
-        this(secret, "https://api.authsignal.com/v1", 2);
+    public AuthsignalClient(String secret, String baseURL) {
+        this(secret, baseURL, DEFAULT_RETRIES);
     }
 
     public AuthsignalClient(String secret, int retries) {
-        this(secret, "https://api.authsignal.com/v1", retries);
+        this(secret, DEFAULT_API_URL, retries);
+    }
+
+    public AuthsignalClient(String secret) {
+        this(secret, DEFAULT_API_URL, DEFAULT_RETRIES);
     }
 
     public CompletableFuture<GetUserResponse> getUser(GetUserRequest request) {
@@ -118,16 +118,7 @@ public class AuthsignalClient {
                     .GET()
                     .build();
 
-            return executeWithRetry(request, retries)
-                .thenCompose(response -> {
-                    if (isSuccessStatusCode(response.statusCode())) {
-                        return CompletableFuture.completedFuture(response);
-                    } else {
-                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-                        future.completeExceptionally(mapToAuthsignalException(response));
-                        return future;
-                    }
-                });
+            return sendHttpRequest(request);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
@@ -145,16 +136,7 @@ public class AuthsignalClient {
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
-            return executeWithRetry(request, retries)
-                .thenCompose(response -> {
-                    if (isSuccessStatusCode(response.statusCode())) {
-                        return CompletableFuture.completedFuture(response);
-                    } else {
-                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-                        future.completeExceptionally(mapToAuthsignalException(response));
-                        return future;
-                    }
-                });
+            return sendHttpRequest(request);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
@@ -172,16 +154,7 @@ public class AuthsignalClient {
                     .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
-            return executeWithRetry(request, retries)
-                .thenCompose(response -> {
-                    if (isSuccessStatusCode(response.statusCode())) {
-                        return CompletableFuture.completedFuture(response);
-                    } else {
-                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-                        future.completeExceptionally(mapToAuthsignalException(response));
-                        return future;
-                    }
-                });
+            return sendHttpRequest(request);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
@@ -198,16 +171,7 @@ public class AuthsignalClient {
                     .DELETE()
                     .build();
 
-            return executeWithRetry(request, retries)
-                .thenCompose(response -> {
-                    if (isSuccessStatusCode(response.statusCode())) {
-                        return CompletableFuture.completedFuture(response);
-                    } else {
-                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-                        future.completeExceptionally(mapToAuthsignalException(response));
-                        return future;
-                    }
-                });
+            return sendHttpRequest(request);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
@@ -225,55 +189,77 @@ public class AuthsignalClient {
         return new AuthsignalException(response.statusCode(), errorResponse.error, errorResponse.errorDescription);
     }
 
-    private boolean isSuccessStatusCode(int statusCode) {
-        return statusCode >= 200 && statusCode <= 299;
-    }
-
-    private CompletableFuture<HttpResponse<String>> executeWithRetry(HttpRequest request, int retriesLeft) {
+    private CompletableFuture<HttpResponse<String>> sendHttpRequest(HttpRequest request, int retryCount) {
         HttpClient client = HttpClient.newHttpClient();
-        long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2, this.retries - retriesLeft));
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-            .handle((response, throwable) -> {
-                if (throwable != null) {
-                    if (retriesLeft > 0 && isRetryableClientError(throwable)) {
-                        return CompletableFuture.supplyAsync(() -> null, 
-                            CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
-                            .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
+                .handle((response, throwable) -> {
+                    if (shouldRetry(request, response, throwable, retryCount)) {
+                        long delay = (long) (100 * Math.pow(2, retryCount + 1));
+
+                        return CompletableFuture.supplyAsync(() -> null,
+                                CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
+                                .thenCompose(f -> sendHttpRequest(request, retryCount + 1));
                     }
-                    CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
-                    future.completeExceptionally(throwable);
-                    return future;
-                }
-                
-                if (retriesLeft > 0 && isRetryableServerError(response.statusCode(), request.method())) {
-                    return CompletableFuture.supplyAsync(() -> null, 
-                        CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
-                        .thenCompose(v -> executeWithRetry(request, retriesLeft - 1));
-                }
-                
-                return CompletableFuture.completedFuture(response);
-            }).thenCompose(future -> future);
+
+                    // Complete with HTTP client error
+                    if (throwable != null) {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(throwable);
+                        return future;
+                    }
+
+                    // Complete with Authsignal server error
+                    if (!isSuccessResponse(response.statusCode())) {
+                        CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
+                        future.completeExceptionally(mapToAuthsignalException(response));
+                        return future;
+                    }
+
+                    // Complete successfully
+                    return CompletableFuture.completedFuture(response);
+                }).thenCompose(future -> future);
     }
 
-    private boolean isRetryableClientError(Throwable error) {
-        // Unwrap CompletionException to get the actual cause
-        Throwable actualError = error instanceof java.util.concurrent.CompletionException && error.getCause() != null
-                ? error.getCause()
-                : error;
+    private CompletableFuture<HttpResponse<String>> sendHttpRequest(HttpRequest request) {
+        return sendHttpRequest(request, 0);
+    }
 
-        if (actualError instanceof java.net.ConnectException) {
-            return true;
+    private boolean shouldRetry(HttpRequest request, HttpResponse<String> response, Throwable error, int retryCount) {
+        if (retryCount >= retries) {
+            return false;
         }
 
-        if (actualError instanceof java.io.IOException) {
+        if (error != null) {
+            Throwable actualError = error instanceof java.util.concurrent.CompletionException
+                    && error.getCause() != null
+                            ? error.getCause()
+                            : error;
+
+            if (actualError instanceof java.net.ConnectException) {
+                return true;
+            }
+
+            if (actualError instanceof java.io.IOException) {
+                return true;
+            }
+        }
+
+        List<String> safeHttpMethods = Arrays.asList("GET", "HEAD", "OPTIONS");
+
+        if (isServerErrorResponse(response.statusCode()) && safeHttpMethods.contains(request.method())) {
+
             return true;
         }
 
         return false;
     }
 
-    private boolean isRetryableServerError(int statusCode, String method) {
-        return statusCode >= 500 && statusCode <= 599 && SAFE_HTTP_METHODS.contains(method);
+    private boolean isSuccessResponse(int statusCode) {
+        return statusCode >= 200 && statusCode <= 299;
+    }
+
+    private boolean isServerErrorResponse(int statusCode) {
+        return statusCode >= 500 && statusCode <= 599;
     }
 }
