@@ -8,4 +8,5 @@ public class UserAttributes extends ApiModel {
     public String username;
     public String displayName;
     public Map<String, Object> custom;
+    public VerificationMethodType defaultVerificationMethod;
 }
