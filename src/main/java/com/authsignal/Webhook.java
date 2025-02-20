@@ -60,8 +60,8 @@ public class Webhook {
         }
     }
 
-    private static long getTimestamp(String sigHeader) {
-        String[] items = sigHeader.split(",", -1);
+    private static long getTimestamp(String header) {
+        String[] items = header.split(",", -1);
 
         for (String item : items) {
             String[] itemParts = item.split("=", 2);
