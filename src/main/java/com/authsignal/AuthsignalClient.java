@@ -190,7 +190,10 @@ public class AuthsignalClient {
     }
 
     private CompletableFuture<HttpResponse<String>> sendHttpRequest(HttpRequest request, int retryCount) {
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient client = HttpClient
+                .newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .handle((response, throwable) -> {
