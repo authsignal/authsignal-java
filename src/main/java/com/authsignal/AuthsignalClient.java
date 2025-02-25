@@ -23,10 +23,14 @@ public class AuthsignalClient {
     private static final String DEFAULT_API_URL = "https://api.authsignal.com/v1";
     private static final int DEFAULT_RETRIES = 2;
 
+    public Webhook webhook;
+
     public AuthsignalClient(String secret, String baseURL, int retries) {
         this._secret = secret;
         this._baseURL = baseURL;
         this.retries = retries;
+
+        this.webhook = new Webhook(secret);
     }
 
     public AuthsignalClient(String secret, String baseURL) {

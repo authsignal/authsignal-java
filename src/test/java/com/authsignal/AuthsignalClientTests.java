@@ -14,11 +14,11 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.UUID;
 
-public class AuthsignalClientTest {
+public class AuthsignalClientTests {
     private final String baseURL;
     private AuthsignalClient client;
 
-    public AuthsignalClientTest() throws FileNotFoundException, IOException {
+    public AuthsignalClientTests() throws FileNotFoundException, IOException {
         Properties localProperties = new Properties();
         localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
 
