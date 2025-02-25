@@ -68,27 +68,26 @@ public class WebhookTests {
     @Test
     public void testValidSignature() {
         String payload = "{"
-            + "\"version\": 1,"
-            + "\"id\": \"256759e3-d3b4-48f1-ad60-428300ab02cd\","
-            + "\"source\": \"https://authsignal.com\","
-            + "\"time\": \"2025-02-25T02:13:36.379Z\","
-            + "\"tenantId\": \"7752d28e-e627-4b1b-bb81-b45d68d617bc\","
-            + "\"type\": \"email.created\","
-            + "\"data\": {"
-            + "\"to\": \"steven@authsignal.com\","
-            + "\"code\": \"696687\","
-            + "\"userId\": \"steven\","
-            + "\"actionCode\": \"sign-in\","
-            + "\"idempotencyKey\": \"37d5c303-4132-4c59-8ee7-669e6943e3fb\","
-            + "\"ipAddress\": \"95.31.18.119\","
-            + "\"verificationMethod\": \"EMAIL_OTP\""
-            + "}"
-            + "}";
+                + "\"version\":1,"
+                + "\"id\":\"bc1598bc-e5d6-4c69-9afb-1a6fe3469d6e\","
+                + "\"source\":\"https://authsignal.com\","
+                + "\"time\":\"2025-02-20T01:51:56.070Z\","
+                + "\"tenantId\":\"7752d28e-e627-4b1b-bb81-b45d68d617bc\","
+                + "\"type\":\"email.created\","
+                + "\"data\":{"
+                + "\"to\":\"chris@authsignal.com\","
+                + "\"code\":\"157743\","
+                + "\"userId\":\"b9f74d36-fcfc-4efc-87f1-3664ab5a7fb0\","
+                + "\"actionCode\":\"accountRecovery\","
+                + "\"idempotencyKey\":\"ba8c1a7c-775d-4dff-9abe-be798b7b8bb9\","
+                + "\"verificationMethod\":\"EMAIL_OTP\""
+                + "}"
+                + "}";
 
         // Ignore tolerance window
         int tolerance = -1;
 
-        String signature = "t=1740449616,v2=kfKPJZkaxXRSCUdX0/OCNpfBdvRpK1U3Hd7ae8lREJU";
+        String signature = "t=1740016316,v2=NwFcIT68pK7g+m365Jj4euXj/ke3GSnkTpMPcRVi5q4";
 
         try {
             Object event = client.webhook.constructEvent(payload, signature, tolerance);
@@ -101,27 +100,26 @@ public class WebhookTests {
     @Test
     public void testValidSignatureWhenTwoApiKeysActive() {
         String payload = "{"
-            + "\"version\": 1,"
-            + "\"id\": \"256759e3-d3b4-48f1-ad60-428300ab02cd\","
-            + "\"source\": \"https://authsignal.com\","
-            + "\"time\": \"2025-02-25T02:13:36.379Z\","
-            + "\"tenantId\": \"7752d28e-e627-4b1b-bb81-b45d68d617bc\","
-            + "\"type\": \"email.created\","
-            + "\"data\": {"
-            + "\"to\": \"steven@authsignal.com\","
-            + "\"code\": \"696687\","
-            + "\"userId\": \"steven\","
-            + "\"actionCode\": \"sign-in\","
-            + "\"idempotencyKey\": \"37d5c303-4132-4c59-8ee7-669e6943e3fb\","
-            + "\"ipAddress\": \"95.31.18.119\","
-            + "\"verificationMethod\": \"EMAIL_OTP\""
-            + "}"
-            + "}";
+                + "\"version\":1,"
+                + "\"id\":\"af7be03c-ea8f-4739-b18e-8b48fcbe4e38\","
+                + "\"source\":\"https://authsignal.com\","
+                + "\"time\":\"2025-02-20T01:47:17.248Z\","
+                + "\"tenantId\":\"7752d28e-e627-4b1b-bb81-b45d68d617bc\","
+                + "\"type\":\"email.created\","
+                + "\"data\":{"
+                + "\"to\":\"chris@authsignal.com\","
+                + "\"code\":\"718190\","
+                + "\"userId\":\"b9f74d36-fcfc-4efc-87f1-3664ab5a7fb0\","
+                + "\"actionCode\":\"accountRecovery\","
+                + "\"idempotencyKey\":\"68d68190-fac9-4e91-b277-c63d31d3c6b1\","
+                + "\"verificationMethod\":\"EMAIL_OTP\""
+                + "}"
+                + "}";
 
         // Ignore tolerance window
         int tolerance = -1;
 
-        String signature = "t=1740449616,v2=kfKPJZkaxXRSCUdX0/OCNpfBdvRpK1U3Hd7ae8lREJU";
+        String signature = "t=1740016037,v2=zI5rg1XJtKH8dXTX9VCSwy07qTPJliXkK9ppgNjmzqw,v2=KMg8mXXGO/SmNNmcszKXI4UaEVHLc21YNWthHfispQo";
 
         try {
             Object event = client.webhook.constructEvent(payload, signature, tolerance);
