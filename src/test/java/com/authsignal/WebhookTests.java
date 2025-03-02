@@ -11,18 +11,15 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class WebhookTests {
-    private final String baseURL;
     private AuthsignalClient client;
 
     public WebhookTests() throws FileNotFoundException, IOException {
         Properties localProperties = new Properties();
         localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
 
-        baseURL = localProperties.getProperty("test.baseURL");
+        String apiSecretKey = localProperties.getProperty("test.secret");
 
-        String secret = localProperties.getProperty("test.secret");
-
-        client = new AuthsignalClient(secret, baseURL);
+        client = new AuthsignalClient(apiSecretKey);
     }
 
     @Test
