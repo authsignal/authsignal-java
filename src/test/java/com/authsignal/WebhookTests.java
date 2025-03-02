@@ -67,6 +67,7 @@ public class WebhookTests {
 
     @Test
     public void testValidSignature() {
+        // Payload should omit whitespace
         String payload = "{"
                 + "\"version\":1,"
                 + "\"id\":\"bc1598bc-e5d6-4c69-9afb-1a6fe3469d6e\","
