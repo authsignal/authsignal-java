@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class WebhookTests {
-    private AuthsignalClient client;
+    private Webhook webhook;
 
     public WebhookTests() throws FileNotFoundException, IOException {
         Properties localProperties = new Properties();
@@ -19,7 +19,7 @@ public class WebhookTests {
 
         String apiSecretKey = localProperties.getProperty("test.secret");
 
-        client = new AuthsignalClient(apiSecretKey);
+        webhook = new Webhook(apiSecretKey);
     }
 
     @Test
@@ -28,7 +28,7 @@ public class WebhookTests {
         String signature = "123";
 
         try {
-            client.webhook.constructEvent(payload, signature);
+            webhook.constructEvent(payload, signature);
             fail("Expected an AuthsignalException to be thrown");
         } catch (InvalidSignatureException ex) {
             assertEquals("Signature format is invalid.", ex.getMessage());
@@ -41,7 +41,7 @@ public class WebhookTests {
         String signature = "t=1630000000,v2=invalid_signature";
 
         try {
-            client.webhook.constructEvent(payload, signature);
+            webhook.constructEvent(payload, signature);
             fail("Expected an AuthsignalException to be thrown");
         } catch (InvalidSignatureException ex) {
             assertEquals("Timestamp is outside the tolerance zone.", ex.getMessage());
@@ -55,7 +55,7 @@ public class WebhookTests {
         String signature = "t=" + timestamp + ",v2=invalid_signature";
 
         try {
-            client.webhook.constructEvent(payload, signature);
+            webhook.constructEvent(payload, signature);
             fail("Expected an AuthsignalException to be thrown");
         } catch (InvalidSignatureException ex) {
             assertEquals("Signature mismatch.", ex.getMessage());
@@ -88,7 +88,7 @@ public class WebhookTests {
         String signature = "t=1740016316,v2=NwFcIT68pK7g+m365Jj4euXj/ke3GSnkTpMPcRVi5q4";
 
         try {
-            Object event = client.webhook.constructEvent(payload, signature, tolerance);
+            Object event = webhook.constructEvent(payload, signature, tolerance);
             assertNotNull(event);
         } catch (InvalidSignatureException ex) {
             fail("Expected a valid event to be constructed");
@@ -120,7 +120,7 @@ public class WebhookTests {
         String signature = "t=1740016037,v2=zI5rg1XJtKH8dXTX9VCSwy07qTPJliXkK9ppgNjmzqw,v2=KMg8mXXGO/SmNNmcszKXI4UaEVHLc21YNWthHfispQo";
 
         try {
-            Object event = client.webhook.constructEvent(payload, signature, tolerance);
+            Object event = webhook.constructEvent(payload, signature, tolerance);
             assertNotNull(event);
         } catch (InvalidSignatureException ex) {
             fail("Expected a valid event to be constructed");
