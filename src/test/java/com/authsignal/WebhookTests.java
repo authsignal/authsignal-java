@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.authsignal.Webhook.InvalidSignatureException;
+import com.authsignal.model.WebhookEvent;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -88,8 +89,13 @@ public class WebhookTests {
         String signature = "t=1740016316,v2=NwFcIT68pK7g+m365Jj4euXj/ke3GSnkTpMPcRVi5q4";
 
         try {
-            Object event = webhook.constructEvent(payload, signature, tolerance);
+            WebhookEvent event = webhook.constructEvent(payload, signature, tolerance);
+
             assertNotNull(event);
+
+            assertEquals(1, event.version);
+
+            assertEquals("accountRecovery", event.data.get("actionCode"));
         } catch (InvalidSignatureException ex) {
             fail("Expected a valid event to be constructed");
         }
@@ -120,7 +126,8 @@ public class WebhookTests {
         String signature = "t=1740016037,v2=zI5rg1XJtKH8dXTX9VCSwy07qTPJliXkK9ppgNjmzqw,v2=KMg8mXXGO/SmNNmcszKXI4UaEVHLc21YNWthHfispQo";
 
         try {
-            Object event = webhook.constructEvent(payload, signature, tolerance);
+            WebhookEvent event = webhook.constructEvent(payload, signature, tolerance);
+
             assertNotNull(event);
         } catch (InvalidSignatureException ex) {
             fail("Expected a valid event to be constructed");

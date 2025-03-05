@@ -1,13 +1,13 @@
 package com.authsignal;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
+import com.authsignal.model.WebhookEvent;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public class Webhook {
     private static final int DEFAULT_TOLERANCE = 5;
@@ -97,16 +97,6 @@ public class Webhook {
         } catch (Exception e) {
             throw new RuntimeException("Failed to compute HMAC", e);
         }
-    }
-
-    public static class WebhookEvent {
-        public int version;
-        public String type;
-        public String id;
-        public String source;
-        public String time;
-        public String tenantId;
-        public Object data;
     }
 
     private static class SignatureHeaderData {
