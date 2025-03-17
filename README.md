@@ -1,3 +1,5 @@
+<img width="1070" alt="Authsignal" src="https://raw.githubusercontent.com/authsignal/authsignal-java/main/.github/images/authsignal.png">
+
 # Authsignal Java
 
 Check out our [official Java SDK documentation](https://docs.authsignal.com/sdks/server/java).
