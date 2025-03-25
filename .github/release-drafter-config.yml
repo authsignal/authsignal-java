@@ -65,7 +65,7 @@ autolabeler:
       - '/feature\/.+/'
   - label: "dependencies"
     files:
-      - "yarn.lock"
+      - "build.gradle"
 
 template: |
   ## Changes in Release v$RESOLVED_VERSION
