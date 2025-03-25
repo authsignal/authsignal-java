@@ -73,26 +73,3 @@ template: |
   $CHANGES
 
   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
-
-  ## Installation
-
-  ```bash
-  npm install @authsignal/node
-  ```
-
-  or
-
-  ```bash
-  yarn add @authsignal/node
-  ``` 
-
-  or
-  ```bash
-  pnpm add @authsignal/node
-  ```
-
-  or
-
-  ```bash
-  bun add @authsignal/node
-  ```
