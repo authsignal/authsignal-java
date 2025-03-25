@@ -22,6 +22,7 @@ public class AuthsignalClient {
 
     private static final String DEFAULT_API_URL = "https://api.authsignal.com/v1";
     private static final int DEFAULT_RETRIES = 2;
+    private static final String VERSION = "2.3.0";
 
     public Webhook webhook;
 
@@ -119,6 +120,7 @@ public class AuthsignalClient {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uri)
                     .header("Authorization", getBasicAuthHeader())
+                    .header("X-Authsignal-Version", VERSION)
                     .GET()
                     .build();
 
@@ -137,6 +139,7 @@ public class AuthsignalClient {
                     .uri(uri)
                     .header("Authorization", getBasicAuthHeader())
                     .header("Content-Type", "application/json")
+                    .header("X-Authsignal-Version", VERSION)
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
@@ -155,6 +158,7 @@ public class AuthsignalClient {
                     .uri(uri)
                     .header("Authorization", getBasicAuthHeader())
                     .header("Content-Type", "application/json")
+                    .header("X-Authsignal-Version", VERSION)
                     .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
@@ -172,6 +176,7 @@ public class AuthsignalClient {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uri)
                     .header("Authorization", getBasicAuthHeader())
+                    .header("X-Authsignal-Version", VERSION)
                     .DELETE()
                     .build();
 
