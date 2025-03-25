@@ -15,7 +15,7 @@ Check out our [official Java SDK documentation](https://docs.authsignal.com/sdks
 Add this dependency to your project's build file:
 
 ```groovy
-implementation 'com.authsignal:authsignal-java:1.0.0'
+implementation 'com.authsignal:authsignal-java:2.3.0'
 ```
 
 ### Maven users
@@ -26,7 +26,7 @@ Add this dependency to your project's POM:
 <dependency>
   <groupId>com.authsignal</groupId>
   <artifactId>authsignal-java</artifactId>
-  <version>1.0.0</version>
+  <version>2.3.0</version>
 </dependency>
 ```
 
@@ -51,4 +51,4 @@ You must specify the correct base URL for your tenant's region.
 
 ## Usage
 
-For more detailed information on how use this library refer to the [official documentation](https://docs.authsignal.com/sdks/server/java).
+For more detailed information on how use this library refer to the [official SDK documentation](https://docs.authsignal.com/sdks/server/overview).
