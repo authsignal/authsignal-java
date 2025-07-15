@@ -7,7 +7,6 @@ import com.authsignal.exception.AuthsignalException;
 import com.authsignal.model.*;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.HashMap;
@@ -18,15 +17,28 @@ public class AuthsignalClientTests {
     private final String baseURL;
     private AuthsignalClient client;
 
-    public AuthsignalClientTests() throws FileNotFoundException, IOException {
-        Properties localProperties = new Properties();
-        localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
+    public AuthsignalClientTests() {
+        baseURL = getProp("AUTHSIGNAL_URL");
 
-        baseURL = localProperties.getProperty("testBaseURL");
-
-        String secret = localProperties.getProperty("testSecret");
+        String secret = getProp("AUTHSIGNAL_SECRET");
 
         client = new AuthsignalClient(secret, baseURL);
+    }
+
+    private String getProp(String name) {
+        String value = System.getenv(name);
+
+        if (value == null) {
+            try {
+                Properties localProperties = new Properties();
+                localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
+                value = localProperties.getProperty(name);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to load properties file", e);
+            }
+        }
+
+        return value;
     }
 
     @Test

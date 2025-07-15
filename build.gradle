@@ -25,11 +25,11 @@ def getProp = { propKey ->
 nexusPublishing {
   repositories {
     sonatype {
-        username.set(getProp("ossrhUsername"))
-        password.set(getProp("ossrhPassword"))
-        stagingProfileId.set(getProp("sonatypeStagingProfileId"))
-        nexusUrl.set(uri( getProp("nexusUrl")))
-        snapshotRepositoryUrl.set(uri(getProp("snapshotRepositoryUrl")))
+        username.set(getProp("OSSRH_USERNAME"))
+        password.set(getProp("OSSRH_PASSWORD"))
+        stagingProfileId.set(getProp("SONATYPE_STAGING_PROFILE_ID"))
+        nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+        snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
     }
   }
 }
@@ -85,9 +85,9 @@ publishing {
 
 signing {
     useInMemoryPgpKeys(
-        getProp("signingKeyId"),
-        getProp("signingKey"),
-        getProp("signingPassword"),
+        getProp("SIGNING_KEY_ID"),
+        getProp("SIGNING_KEY"),
+        getProp("SIGNING_PASSWORD"),
     )
 
     sign publishing.publications.mavenJava
