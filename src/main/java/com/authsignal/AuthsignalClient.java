@@ -182,7 +182,7 @@ public class AuthsignalClient {
     }
 
     public CompletableFuture<Void> revokeUserSessions(RevokeUserSessionsRequest request) {
-        return postRequest("/sessions/revoke-user", new Gson().toJson(request))
+        return postRequest("/sessions/user/revoke", new Gson().toJson(request))
                 .thenApply(response -> null);
     }
 
