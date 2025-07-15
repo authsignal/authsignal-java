@@ -6,14 +6,19 @@ import com.google.gson.Gson;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class AuthsignalClient {
     private String _secret;
@@ -22,7 +27,7 @@ public class AuthsignalClient {
 
     private static final String DEFAULT_API_URL = "https://api.authsignal.com/v1";
     private static final int DEFAULT_RETRIES = 2;
-    private static final String VERSION = "2.4.0";
+    private static final String VERSION = "2.5.0";
 
     public Webhook webhook;
 
@@ -112,6 +117,73 @@ public class AuthsignalClient {
 
         return patchRequest(path, new Gson().toJson(request.attributes))
                 .thenApply(response -> new Gson().fromJson(response.body(), ActionAttributes.class));
+    }
+
+    public CompletableFuture<ChallengeResponse> challenge(ChallengeRequest request) {
+        return postRequest("/challenge", new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), ChallengeResponse.class));
+    }
+
+    public CompletableFuture<VerifyResponse> verify(VerifyRequest request) {
+        return postRequest("/verify", new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), VerifyResponse.class));
+    }
+
+    public CompletableFuture<ClaimChallengeResponse> claimChallenge(ClaimChallengeRequest request) {
+        return postRequest("/claim", new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), ClaimChallengeResponse.class));
+    }
+
+    public CompletableFuture<GetChallengeResponse> getChallenge(GetChallengeRequest request) {
+        Map<String, String> params = new HashMap<>();
+
+        if (request.challengeId != null) {
+            params.put("challengeId", request.challengeId);
+        }
+
+        if (request.userId != null) {
+            params.put("userId", request.userId);
+        }
+
+        if (request.action != null) {
+            params.put("action", request.action);
+        }
+
+        if (request.verificationMethod != null) {
+            params.put("verificationMethod", request.verificationMethod);
+        }
+
+        String query = buildQueryString(params);
+
+        String path = "/challenges" + query;
+
+        return postRequest(path, new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), GetChallengeResponse.class));
+    }
+
+    public CompletableFuture<CreateSessionResponse> createSession(CreateSessionRequest request) {
+        return postRequest("/sessions", new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), CreateSessionResponse.class));
+    }
+
+    public CompletableFuture<ValidateSessionResponse> validateSession(ValidateSessionRequest request) {
+        return postRequest("/sessions/validate", new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), ValidateSessionResponse.class));
+    }
+
+    public CompletableFuture<RefreshSessionResponse> refreshSession(RefreshSessionRequest request) {
+        return postRequest("/sessions/refresh", new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), RefreshSessionResponse.class));
+    }
+
+    public CompletableFuture<Void> revokeSession(RevokeSessionRequest request) {
+        return postRequest("/sessions/revoke", new Gson().toJson(request))
+                .thenApply(response -> null);
+    }
+
+    public CompletableFuture<Void> revokeUserSessions(RevokeUserSessionsRequest request) {
+        return postRequest("/sessions/revoke-user", new Gson().toJson(request))
+                .thenApply(response -> null);
     }
 
     private CompletableFuture<HttpResponse<String>> getRequest(String path) {
@@ -275,5 +347,11 @@ public class AuthsignalClient {
 
     private boolean isServerErrorResponse(int statusCode) {
         return statusCode >= 500 && statusCode <= 599;
+    }
+
+    private String buildQueryString(Map<String, String> params) {
+        return params.entrySet().stream()
+                .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+                .collect(Collectors.joining("&"));
     }
 }
