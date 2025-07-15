@@ -18,14 +18,18 @@ dependencies {
 def Properties properties = new Properties()
 properties.load(project.rootProject.file("local.properties").newDataInputStream())
 
+def getProp = { propKey ->
+    System.getenv(propKey) ?: properties.getProperty(propKey)
+}
+
 nexusPublishing {
   repositories {
     sonatype {
-        username.set(properties.getProperty("ossrhUsername"))
-        password.set(properties.getProperty("ossrhPassword"))
-        stagingProfileId.set(properties.getProperty("sonatypeStagingProfileId"))
-        nexusUrl.set(uri(properties.getProperty("nexusUrl")))
-        snapshotRepositoryUrl.set(uri(properties.getProperty("snapshotRepositoryUrl")))
+        username.set(getProp("ossrhUsername"))
+        password.set(getProp("ossrhPassword"))
+        stagingProfileId.set(getProp("sonatypeStagingProfileId"))
+        nexusUrl.set(uri( getProp("nexusUrl")))
+        snapshotRepositoryUrl.set(uri(getProp("snapshotRepositoryUrl")))
     }
   }
 }
@@ -81,9 +85,9 @@ publishing {
 
 signing {
     useInMemoryPgpKeys(
-        properties.getProperty("signing.keyId"),
-        properties.getProperty("signing.key"),
-        properties.getProperty("signing.password"),
+        getProp("signingKeyId"),
+        getProp("signingKey"),
+        getProp("signingPassword"),
     )
 
     sign publishing.publications.mavenJava

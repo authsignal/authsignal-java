@@ -22,9 +22,9 @@ public class AuthsignalClientTests {
         Properties localProperties = new Properties();
         localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
 
-        baseURL = localProperties.getProperty("test.baseURL");
+        baseURL = localProperties.getProperty("testBaseURL");
 
-        String secret = localProperties.getProperty("test.secret");
+        String secret = localProperties.getProperty("testSecret");
 
         client = new AuthsignalClient(secret, baseURL);
     }

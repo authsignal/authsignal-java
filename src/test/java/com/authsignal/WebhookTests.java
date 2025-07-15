@@ -18,7 +18,7 @@ public class WebhookTests {
         Properties localProperties = new Properties();
         localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
 
-        String apiSecretKey = localProperties.getProperty("test.secret");
+        String apiSecretKey = localProperties.getProperty("testSecret");
 
         webhook = new Webhook(apiSecretKey);
     }
