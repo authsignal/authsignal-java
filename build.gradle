@@ -83,7 +83,7 @@ jreleaser {
         active = 'ALWAYS'
         publicKey = file('pgp-public-key').text
         secretKey = file('pgp-private-key').text
-        passphrase = getProp('PGP_PASSPHRASE')
+        passphrase = getProp('SIGNING_PASSPHRASE')
     }
     deploy {
         maven {
