@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
-    id 'io.github.gradle-nexus.publish-plugin' version '1.3.0'
+    id 'org.jreleaser' version '1.19.0'
 }
 
 repositories {
@@ -11,23 +11,7 @@ repositories {
 
 dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
-
     testImplementation 'junit:junit:4.13.2'
-}
-
-def Properties properties = new Properties()
-properties.load(project.rootProject.file("local.properties").newDataInputStream())
-
-nexusPublishing {
-  repositories {
-    sonatype {
-        username.set(properties.getProperty("ossrhUsername"))
-        password.set(properties.getProperty("ossrhPassword"))
-        stagingProfileId.set(properties.getProperty("sonatypeStagingProfileId"))
-        nexusUrl.set(uri(properties.getProperty("nexusUrl")))
-        snapshotRepositoryUrl.set(uri(properties.getProperty("snapshotRepositoryUrl")))
-    }
-  }
 }
 
 java {
@@ -40,19 +24,13 @@ java {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            artifactId = project.pomArtifactId
-            groupId = project.pomGroup
-            version = project.versionName
+        maven(MavenPublication) {
+            groupId = 'com.authsignal'
+            artifactId = 'authsignal-java'
+            version = project.version
+
             from components.java
-            versionMapping {
-                usage('java-api') {
-                    fromResolutionOf('runtimeClasspath')
-                }
-                usage('java-runtime') {
-                    fromResolutionResult()
-                }
-            }
+
             pom {
                 name = 'authsignal-java'
                 description = 'The Authsignal Server SDK for Java.'
@@ -77,16 +55,42 @@ publishing {
             }
         }
     }
+
+    repositories {
+        maven {
+            url = layout.buildDirectory.dir('staging-deploy')
+        }
+    }
 }
 
-signing {
-    useInMemoryPgpKeys(
-        properties.getProperty("signing.keyId"),
-        properties.getProperty("signing.key"),
-        properties.getProperty("signing.password"),
-    )
-
-    sign publishing.publications.mavenJava
+jreleaser {
+    project {
+        java {
+            groupId = 'com.authsignal'
+            artifactId = 'authsignal-java'
+            description = 'The Authsignal Server SDK for Java.'
+            version = project.version
+        }
+    }
+    signing {
+        active = 'ALWAYS'
+        publicKey = System.getenv('SIGNING_PUBLIC_KEY')
+        secretKey = System.getenv('SIGNING_SECRET_KEY')
+        passphrase = System.getenv('SIGNING_PASSPHRASE')
+    }
+    deploy {
+        maven {
+            mavenCentral {
+                sonatype {
+                    active = 'ALWAYS'
+                    url = 'https://central.sonatype.com/api/v1/publisher'
+                    username = System.getenv('MAVENCENTRAL_USERNAME')
+                    password = System.getenv('MAVENCENTRAL_PASSWORD')
+                    stagingRepository('build/staging-deploy')
+                }
+            }
+        }
+    }
 }
 
 test {

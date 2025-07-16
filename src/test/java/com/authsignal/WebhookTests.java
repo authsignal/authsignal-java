@@ -7,20 +7,32 @@ import com.authsignal.Webhook.InvalidSignatureException;
 import com.authsignal.model.WebhookEvent;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
 public class WebhookTests {
     private Webhook webhook;
 
-    public WebhookTests() throws FileNotFoundException, IOException {
-        Properties localProperties = new Properties();
-        localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
+    public WebhookTests() {
+        String secret = getProp("AUTHSIGNAL_SECRET");
 
-        String apiSecretKey = localProperties.getProperty("test.secret");
+        webhook = new Webhook(secret);
+    }
 
-        webhook = new Webhook(apiSecretKey);
+    private String getProp(String name) {
+        String value = System.getenv(name);
+
+        if (value == null) {
+            try {
+                Properties localProperties = new Properties();
+                localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
+                value = localProperties.getProperty(name);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to load properties file", e);
+            }
+        }
+
+        return value;
     }
 
     @Test
