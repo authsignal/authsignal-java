@@ -21,7 +21,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build and Publish
+      - name: Publish to Maven Central
         env:
           SIGNING_PUBLIC_KEY: ${{ secrets.SIGNING_PUBLIC_KEY }}
           SIGNING_SECRET_KEY: ${{ secrets.SIGNING_SECRET_KEY }}
@@ -32,5 +32,5 @@ jobs:
           AUTHSIGNAL_SECRET: ${{ secrets.AUTHSIGNAL_SECRET }}
         run: |
           ./gradlew clean
-          ./gradlew build
+          ./gradlew publish
           ./gradlew jreleaserDeploy
