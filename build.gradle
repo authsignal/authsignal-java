@@ -81,8 +81,8 @@ jreleaser {
     }
     signing {
         active = 'ALWAYS'
-        publicKey = file('pgp-public-key').text
-        secretKey = file('pgp-private-key').text
+        publicKey = System.getenv('SIGNING_PUBLIC_KEY') ?: file('pgp-public-key').text
+        secretKey = System.getenv('SIGNING_SECRET_KEY') ?: file('pgp-private-key').text
         passphrase = getProp('SIGNING_PASSPHRASE')
     }
     deploy {
