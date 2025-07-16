@@ -28,6 +28,8 @@ jobs:
           SIGNING_PASSPHRASE: ${{ secrets.SIGNING_PASSPHRASE }}
           MAVENCENTRAL_USERNAME: ${{ secrets.MAVENCENTRAL_USERNAME }}
           MAVENCENTRAL_PASSWORD: ${{ secrets.MAVENCENTRAL_PASSWORD }}
+          AUTHSIGNAL_URL: ${{ secrets.AUTHSIGNAL_URL }}
+          AUTHSIGNAL_SECRET: ${{ secrets.AUTHSIGNAL_SECRET }}
         run: |
           ./gradlew clean
           ./gradlew build
