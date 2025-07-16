@@ -1,6 +1,4 @@
 .gradle
 build
 local.properties
-pgp-private-key
-pgp-public-key
 .vscode

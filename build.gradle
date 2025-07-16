@@ -14,13 +14,6 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
 }
 
-def Properties properties = new Properties()
-properties.load(project.rootProject.file("local.properties").newDataInputStream())
-
-def getProp = { propKey ->
-    System.getenv(propKey) ?: properties.getProperty(propKey)
-}
-
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -81,9 +74,9 @@ jreleaser {
     }
     signing {
         active = 'ALWAYS'
-        publicKey = System.getenv('SIGNING_PUBLIC_KEY') ?: file('pgp-public-key').text
-        secretKey = System.getenv('SIGNING_SECRET_KEY') ?: file('pgp-private-key').text
-        passphrase = getProp('SIGNING_PASSPHRASE')
+        publicKey = System.getenv('SIGNING_PUBLIC_KEY')
+        secretKey = System.getenv('SIGNING_SECRET_KEY')
+        passphrase = System.getenv('SIGNING_PASSPHRASE')
     }
     deploy {
         maven {
@@ -91,8 +84,8 @@ jreleaser {
                 sonatype {
                     active = 'ALWAYS'
                     url = 'https://central.sonatype.com/api/v1/publisher'
-                    username = getProp('MAVENCENTRAL_USERNAME')
-                    password = getProp('MAVENCENTRAL_PASSWORD')
+                    username = System.getenv('MAVENCENTRAL_USERNAME')
+                    password = System.getenv('MAVENCENTRAL_PASSWORD')
                     stagingRepository('build/staging-deploy')
                 }
             }
