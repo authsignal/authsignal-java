@@ -73,7 +73,7 @@ jreleaser {
     }
     signing {
         active = 'ALWAYS'
-        publicKey = System.getenv('SIGNING_PUBLIC_KEY')
+        verify = false
         secretKey = System.getenv('SIGNING_SECRET_KEY')
         passphrase = System.getenv('SIGNING_PASSPHRASE')
     }

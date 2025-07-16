@@ -23,7 +23,6 @@ jobs:
 
       - name: Publish to Maven Central
         env:
-          SIGNING_PUBLIC_KEY: ${{ secrets.SIGNING_PUBLIC_KEY }}
           SIGNING_SECRET_KEY: ${{ secrets.SIGNING_SECRET_KEY }}
           SIGNING_PASSPHRASE: ${{ secrets.SIGNING_PASSPHRASE }}
           MAVENCENTRAL_USERNAME: ${{ secrets.MAVENCENTRAL_USERNAME }}
