@@ -35,4 +35,7 @@ public enum VerificationMethodType {
 
     @SerializedName("IDVERSE")
     IDVERSE,
+
+    @SerializedName("DEVICE")
+    DEVICE,
 }
