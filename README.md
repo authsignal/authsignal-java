@@ -15,7 +15,7 @@ Check out our [official Java SDK documentation](https://docs.authsignal.com/sdks
 Add this dependency to your project's build file:
 
 ```groovy
-implementation 'com.authsignal:authsignal-java:2.6.0'
+implementation 'com.authsignal:authsignal-java:2.7.0'
 ```
 
 ### Maven users
@@ -26,7 +26,7 @@ Add this dependency to your project's POM:
 <dependency>
   <groupId>com.authsignal</groupId>
   <artifactId>authsignal-java</artifactId>
-  <version>2.6.0</version>
+  <version>2.7.0</version>
 </dependency>
 ```
 
