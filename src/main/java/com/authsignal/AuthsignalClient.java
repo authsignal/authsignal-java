@@ -58,6 +58,41 @@ public class AuthsignalClient {
                 response -> new Gson().fromJson(response.body(), GetUserResponse.class));
     }
 
+    public CompletableFuture<QueryUsersResponse> queryUsers(QueryUsersRequest request) {
+        Map<String, String> params = new HashMap<>();
+
+        if (request.username != null) {
+            params.put("username", request.username);
+        }
+
+        if (request.email != null) {
+            params.put("email", request.email);
+        }
+
+        if (request.phoneNumber != null) {
+            params.put("phoneNumber", request.phoneNumber);
+        }
+
+        if (request.token != null) {
+            params.put("token", request.token);
+        }
+
+        if (request.limit != null) {
+            params.put("limit", request.limit.toString());
+        }
+
+        if (request.lastEvaluatedUserId != null) {
+            params.put("lastEvaluatedUserId", request.lastEvaluatedUserId);
+        }
+
+        String query = buildQueryString(params);
+
+        String path = "/users" + (query.isEmpty() ? "" : "?" + query);
+
+        return getRequest(path)
+                .thenApply(response -> new Gson().fromJson(response.body(), QueryUsersResponse.class));
+    }
+
     public CompletableFuture<UserAttributes> updateUser(UpdateUserRequest request) {
         String path = String.format("/users/%s", request.userId);
 
@@ -110,6 +145,29 @@ public class AuthsignalClient {
         String path = String.format("/users/%s/actions/%s/%s", request.userId, request.action, request.idempotencyKey);
 
         return getRequest(path).thenApply(response -> new Gson().fromJson(response.body(), GetActionResponse.class));
+    }
+
+    public CompletableFuture<QueryUserActionsResponseItem[]> queryUserActions(QueryUserActionsRequest request) {
+        Map<String, String> params = new HashMap<>();
+
+        if (request.fromDate != null) {
+            params.put("fromDate", request.fromDate);
+        }
+
+        if (request.actionCodes != null && request.actionCodes.length > 0) {
+            params.put("codes", String.join(",", request.actionCodes));
+        }
+
+        if (request.state != null) {
+            params.put("state", request.state.toString());
+        }
+
+        String query = buildQueryString(params);
+
+        String path = String.format("/users/%s/actions", request.userId) + (query.isEmpty() ? "" : "?" + query);
+
+        return getRequest(path)
+                .thenApply(response -> new Gson().fromJson(response.body(), QueryUserActionsResponseItem[].class));
     }
 
     public CompletableFuture<ActionAttributes> updateAction(UpdateActionRequest request) {
