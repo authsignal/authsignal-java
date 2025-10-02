@@ -272,4 +272,131 @@ public class AuthsignalClientTests {
             fail("should not throw any exception");
         }
     }
+
+    @Test
+    public void testQueryUsers() {
+        String userId = UUID.randomUUID().toString();
+        String testEmail = "test-" + UUID.randomUUID().toString() + "@example.com";
+
+        try {
+            // First create a user with a unique email
+            UpdateUserRequest updateUserRequest = new UpdateUserRequest();
+            updateUserRequest.userId = userId;
+            updateUserRequest.attributes = new UserAttributes();
+            updateUserRequest.attributes.email = testEmail;
+
+            client.updateUser(updateUserRequest).get();
+
+            // Query by email
+            QueryUsersRequest queryRequest = new QueryUsersRequest();
+            queryRequest.email = testEmail;
+
+            QueryUsersResponse queryResponse = client.queryUsers(queryRequest).get();
+
+            assertNotNull("queryResponse should exist", queryResponse);
+            assertNotNull("users array should exist", queryResponse.users);
+            assertTrue("users array should not be empty", queryResponse.users.length > 0);
+
+            QueryUsersResponseUser user = queryResponse.users[0];
+            assertEquals("userId should match", userId, user.userId);
+            assertEquals("email should match", testEmail, user.email);
+
+            // Test pagination with limit
+            QueryUsersRequest limitRequest = new QueryUsersRequest();
+            limitRequest.email = testEmail;
+            limitRequest.limit = 1;
+
+            QueryUsersResponse limitResponse = client.queryUsers(limitRequest).get();
+
+            assertNotNull("limitResponse should exist", limitResponse);
+            assertTrue("users array should respect limit", limitResponse.users.length <= 1);
+
+            // Clean up
+            DeleteUserRequest deleteRequest = new DeleteUserRequest();
+            deleteRequest.userId = userId;
+            client.deleteUser(deleteRequest).get();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+
+            fail("should not throw any exception");
+        }
+    }
+
+    @Test
+    public void testQueryUserActions() {
+        String userId = UUID.randomUUID().toString();
+
+        EnrollVerifiedAuthenticatorRequest enrollRequest = new EnrollVerifiedAuthenticatorRequest();
+        enrollRequest.userId = userId;
+        enrollRequest.attributes = new EnrollVerifiedAuthenticatorAttributes();
+        enrollRequest.attributes.verificationMethod = VerificationMethodType.SMS;
+        enrollRequest.attributes.phoneNumber = "+6427000000";
+
+        try {
+            EnrollVerifiedAuthenticatorResponse enrollResponse = client.enrollVerifiedAuthenticator(enrollRequest)
+                    .get();
+
+            assertNotNull("enrollResponse should exist", enrollResponse);
+
+            // Track an action
+            TrackRequest trackRequest = new TrackRequest();
+            trackRequest.userId = userId;
+            trackRequest.action = "signIn";
+
+            TrackResponse trackResponse = client.track(trackRequest).get();
+
+            assertNotNull("trackResponse should exist", trackResponse);
+
+            // Query user actions
+            QueryUserActionsRequest queryRequest = new QueryUserActionsRequest();
+            queryRequest.userId = userId;
+
+            QueryUserActionsResponseItem[] actions = client.queryUserActions(queryRequest).get();
+
+            assertNotNull("actions should exist", actions);
+            assertTrue("actions should not be empty", actions.length > 0);
+
+            QueryUserActionsResponseItem action = actions[0];
+            assertEquals("action code should match", "signIn", action.actionCode);
+            assertNotNull("idempotencyKey should exist", action.idempotencyKey);
+            assertNotNull("createdAt should exist", action.createdAt);
+            assertNotNull("state should exist", action.state);
+
+            // Query with filter by action code
+            QueryUserActionsRequest filteredRequest = new QueryUserActionsRequest();
+            filteredRequest.userId = userId;
+            filteredRequest.actionCodes = new String[] { "signIn" };
+
+            QueryUserActionsResponseItem[] filteredActions = client.queryUserActions(filteredRequest).get();
+
+            assertNotNull("filtered actions should exist", filteredActions);
+            assertTrue("filtered actions should not be empty", filteredActions.length > 0);
+
+            for (QueryUserActionsResponseItem filteredAction : filteredActions) {
+                assertEquals("all actions should have signIn code", "signIn", filteredAction.actionCode);
+            }
+
+            // Query with state filter
+            QueryUserActionsRequest stateRequest = new QueryUserActionsRequest();
+            stateRequest.userId = userId;
+            stateRequest.state = UserActionState.CHALLENGE_REQUIRED;
+
+            QueryUserActionsResponseItem[] stateActions = client.queryUserActions(stateRequest).get();
+
+            assertNotNull("state filtered actions should exist", stateActions);
+            // Actions exist if any match the state filter
+            if (stateActions.length > 0) {
+                assertEquals("action state should match filter", "CHALLENGE_REQUIRED", stateActions[0].state);
+            }
+
+            // Clean up
+            DeleteUserRequest deleteRequest = new DeleteUserRequest();
+            deleteRequest.userId = userId;
+            client.deleteUser(deleteRequest).get();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+
+            fail("should not throw any exception");
+        }
+    }
 }
