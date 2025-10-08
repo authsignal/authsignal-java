@@ -38,4 +38,7 @@ public enum VerificationMethodType {
 
     @SerializedName("DEVICE")
     DEVICE,
+
+    @SerializedName("WHATSAPP")
+    WHATSAPP,
 }
