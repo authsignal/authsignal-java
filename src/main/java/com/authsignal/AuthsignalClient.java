@@ -27,7 +27,7 @@ public class AuthsignalClient {
 
     private static final String DEFAULT_API_URL = "https://api.authsignal.com/v1";
     private static final int DEFAULT_RETRIES = 2;
-    private static final String VERSION = "2.9.1";
+    private static final String VERSION = "2.10.1";
 
     public Webhook webhook;
 
