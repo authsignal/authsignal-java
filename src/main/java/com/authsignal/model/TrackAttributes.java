@@ -14,4 +14,7 @@ public class TrackAttributes extends ApiModel {
     public String scope;
     public Boolean redirectToSettings;
     public Map<String, Object> custom;
+    public String locale;
+    public String challengeId;
+    public String customDomain;
 }
