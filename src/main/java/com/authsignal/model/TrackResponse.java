@@ -9,4 +9,5 @@ public class TrackResponse extends ApiModel {
     public VerificationMethodType[] allowedVerificationMethods;
     public VerificationMethodType[] enrolledVerificationMethods;
     public VerificationMethodType defaultVerificationMethod;
+    public String[] ruleIds;
 }
