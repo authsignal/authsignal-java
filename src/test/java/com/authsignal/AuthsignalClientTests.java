@@ -78,7 +78,7 @@ public class AuthsignalClientTests {
         enrollRequest.userId = userId;
         enrollRequest.attributes = new EnrollVerifiedAuthenticatorAttributes();
         enrollRequest.attributes.verificationMethod = VerificationMethodType.SMS;
-        enrollRequest.attributes.phoneNumber = "+6427000000";
+        enrollRequest.attributes.phoneNumber = "+64270000000";
 
         try {
             EnrollVerifiedAuthenticatorResponse enrollResponse = client.enrollVerifiedAuthenticator(enrollRequest)
@@ -141,7 +141,7 @@ public class AuthsignalClientTests {
         enrollRequest.userId = userId;
         enrollRequest.attributes = new EnrollVerifiedAuthenticatorAttributes();
         enrollRequest.attributes.verificationMethod = VerificationMethodType.SMS;
-        enrollRequest.attributes.phoneNumber = "+6427000000";
+        enrollRequest.attributes.phoneNumber = "+64270000000";
 
         try {
             EnrollVerifiedAuthenticatorResponse enrollResponse = client.enrollVerifiedAuthenticator(enrollRequest)
@@ -186,7 +186,7 @@ public class AuthsignalClientTests {
         enrollRequest.userId = userId;
         enrollRequest.attributes = new EnrollVerifiedAuthenticatorAttributes();
         enrollRequest.attributes.verificationMethod = VerificationMethodType.SMS;
-        enrollRequest.attributes.phoneNumber = "+6427000000";
+        enrollRequest.attributes.phoneNumber = "+64270000000";
 
         try {
             EnrollVerifiedAuthenticatorResponse enrollResponse = client.enrollVerifiedAuthenticator(enrollRequest)
@@ -330,7 +330,7 @@ public class AuthsignalClientTests {
         enrollRequest.userId = userId;
         enrollRequest.attributes = new EnrollVerifiedAuthenticatorAttributes();
         enrollRequest.attributes.verificationMethod = VerificationMethodType.SMS;
-        enrollRequest.attributes.phoneNumber = "+6427000000";
+        enrollRequest.attributes.phoneNumber = "+64270000000";
 
         try {
             EnrollVerifiedAuthenticatorResponse enrollResponse = client.enrollVerifiedAuthenticator(enrollRequest)
