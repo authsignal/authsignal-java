@@ -11,4 +11,5 @@ public class ValidateChallengeResponse extends ApiModel {
     public String action;
     public String idempotencyKey;
     public String verificationMethod;
+    public String veriffSessionId;
 }
