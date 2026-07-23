@@ -1,7 +1,11 @@
 package com.authsignal;
 
 import com.authsignal.model.WebhookEvent;
+import com.authsignal.model.WebhookEventBatch;
+import com.authsignal.model.WebhookLogEvent;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -20,6 +24,50 @@ public class Webhook {
 
     public WebhookEvent constructEvent(String payload, String signature, int tolerance)
             throws InvalidSignatureException {
+        verifySignature(payload, signature, tolerance);
+
+        JsonObject parsedPayload = parsePayload(payload);
+
+        if (parsedPayload.has("records")) {
+            throw new InvalidPayloadException(
+                    "Payload is a batch of log events. Use constructLogEventBatch instead.");
+        }
+
+        WebhookEvent event = deserializePayload(parsedPayload, WebhookEvent.class);
+        validateEvent(event);
+
+        return event;
+    }
+
+    public WebhookEvent constructEvent(String payload, String signature) throws InvalidSignatureException {
+        return constructEvent(payload, signature, DEFAULT_TOLERANCE);
+    }
+
+    public WebhookEventBatch constructLogEventBatch(String payload, String signature, int tolerance)
+            throws InvalidSignatureException {
+        verifySignature(payload, signature, tolerance);
+
+        JsonObject parsedPayload = parsePayload(payload);
+        WebhookEventBatch batch = deserializePayload(parsedPayload, WebhookEventBatch.class);
+
+        if (batch.records == null) {
+            throw new InvalidPayloadException("Payload format is invalid. Expected a 'records' array.");
+        }
+
+        for (WebhookLogEvent event : batch.records) {
+            validateLogEvent(event);
+        }
+
+        return batch;
+    }
+
+    public WebhookEventBatch constructLogEventBatch(String payload, String signature)
+            throws InvalidSignatureException {
+        return constructLogEventBatch(payload, signature, DEFAULT_TOLERANCE);
+    }
+
+    private void verifySignature(String payload, String signature, int tolerance)
+            throws InvalidSignatureException {
         SignatureHeaderData parsedSignature = parseSignature(signature);
 
         long secondsSinceEpoch = System.currentTimeMillis() / 1000;
@@ -37,12 +85,57 @@ public class Webhook {
         if (!match) {
             throw new InvalidSignatureException("Signature mismatch.");
         }
-
-        return new Gson().fromJson(payload, WebhookEvent.class);
     }
 
-    public WebhookEvent constructEvent(String payload, String signature) throws InvalidSignatureException {
-        return constructEvent(payload, signature, DEFAULT_TOLERANCE);
+    private JsonObject parsePayload(String payload) {
+        try {
+            return JsonParser.parseString(payload).getAsJsonObject();
+        } catch (Exception exception) {
+            throw new InvalidPayloadException("Payload format is invalid.", exception);
+        }
+    }
+
+    private <T> T deserializePayload(JsonObject payload, Class<T> payloadClass) {
+        try {
+            return new Gson().fromJson(payload, payloadClass);
+        } catch (Exception exception) {
+            throw new InvalidPayloadException("Payload format is invalid.", exception);
+        }
+    }
+
+    private void validateEvent(WebhookEvent event) {
+        validateEnvelope(event.version, event.type, event.id, event.source, event.time, event.tenantId);
+
+        if (event.data == null) {
+            throw new InvalidPayloadException("Payload is missing required field 'data'.");
+        }
+    }
+
+    private void validateLogEvent(WebhookLogEvent event) {
+        validateEnvelope(event.version, event.type, event.id, event.source, event.time, event.tenantId);
+
+        if (event.record == null) {
+            throw new InvalidPayloadException("Payload is missing required field 'record'.");
+        }
+    }
+
+    private void validateEnvelope(
+            int version, String type, String id, String source, String time, String tenantId) {
+        if (version <= 0) {
+            throw new InvalidPayloadException("Payload is missing required field 'version'.");
+        }
+
+        requireField(type, "type");
+        requireField(id, "id");
+        requireField(source, "source");
+        requireField(time, "time");
+        requireField(tenantId, "tenantId");
+    }
+
+    private void requireField(String value, String name) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new InvalidPayloadException("Payload is missing required field '" + name + "'.");
+        }
     }
 
     private SignatureHeaderData parseSignature(String value) throws InvalidSignatureException {
@@ -112,6 +205,16 @@ public class Webhook {
     public static class InvalidSignatureException extends Exception {
         public InvalidSignatureException(String message) {
             super(message);
+        }
+    }
+
+    public static class InvalidPayloadException extends RuntimeException {
+        public InvalidPayloadException(String message) {
+            super(message);
+        }
+
+        public InvalidPayloadException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

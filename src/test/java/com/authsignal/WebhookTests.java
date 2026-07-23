@@ -5,34 +5,33 @@ import static org.junit.Assert.*;
 
 import com.authsignal.Webhook.InvalidSignatureException;
 import com.authsignal.model.WebhookEvent;
+import com.authsignal.model.WebhookEventBatch;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public class WebhookTests {
-    private Webhook webhook;
+    private static final String API_SECRET_KEY = "test-secret-key";
+    private final Webhook webhook;
 
     public WebhookTests() {
-        String secret = getProp("AUTHSIGNAL_SECRET");
-
-        webhook = new Webhook(secret);
+        webhook = new Webhook(API_SECRET_KEY);
     }
 
-    private String getProp(String name) {
-        String value = System.getenv(name);
-
-        if (value == null) {
-            try {
-                Properties localProperties = new Properties();
-                localProperties.load(new FileInputStream(System.getProperty("user.dir") + "/local.properties"));
-                value = localProperties.getProperty(name);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to load properties file", e);
-            }
+    private String createSignature(String payload) {
+        try {
+            long timestamp = System.currentTimeMillis() / 1000;
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(API_SECRET_KEY.getBytes(), "HmacSHA256"));
+            byte[] hmacBytes = mac.doFinal((timestamp + "." + payload).getBytes());
+            String signature = Base64.getEncoder().encodeToString(hmacBytes).replace("=", "");
+            return "t=" + timestamp + ",v2=" + signature;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to compute test signature", e);
         }
-
-        return value;
     }
 
     @Test
@@ -95,13 +94,8 @@ public class WebhookTests {
                 + "}"
                 + "}";
 
-        // Ignore tolerance window
-        int tolerance = -1;
-
-        String signature = "t=1740016316,v2=NwFcIT68pK7g+m365Jj4euXj/ke3GSnkTpMPcRVi5q4";
-
         try {
-            WebhookEvent event = webhook.constructEvent(payload, signature, tolerance);
+            WebhookEvent event = webhook.constructEvent(payload, createSignature(payload));
 
             assertNotNull(event);
 
@@ -132,17 +126,101 @@ public class WebhookTests {
                 + "}"
                 + "}";
 
-        // Ignore tolerance window
-        int tolerance = -1;
-
-        String signature = "t=1740016037,v2=zI5rg1XJtKH8dXTX9VCSwy07qTPJliXkK9ppgNjmzqw,v2=KMg8mXXGO/SmNNmcszKXI4UaEVHLc21YNWthHfispQo";
-
         try {
-            WebhookEvent event = webhook.constructEvent(payload, signature, tolerance);
+            String signature = createSignature(payload) + ",v2=invalid_signature";
+            WebhookEvent event = webhook.constructEvent(payload, signature);
 
             assertNotNull(event);
         } catch (InvalidSignatureException ex) {
             fail("Expected a valid event to be constructed");
+        }
+    }
+
+    @Test
+    public void testEventWithCustomVariables() {
+        String payload = "{"
+                + "\"version\":1,"
+                + "\"id\":\"bc1598bc-e5d6-4c69-9afb-1a6fe3469d6e\","
+                + "\"source\":\"https://authsignal.com\","
+                + "\"time\":\"2025-02-20T01:51:56.070Z\","
+                + "\"tenantId\":\"7752d28e-e627-4b1b-bb81-b45d68d617bc\","
+                + "\"type\":\"sms.created\","
+                + "\"data\":{"
+                + "\"actionCode\":\"smsVerify\","
+                + "\"customVariables\":{"
+                + "\"action_journeyType\":\"ForgotChangePassword\","
+                + "\"retryCount\":2,"
+                + "\"isRecovery\":true,"
+                + "\"channels\":[\"sms\",\"email\"]"
+                + "}"
+                + "}"
+                + "}";
+
+        try {
+            WebhookEvent event = webhook.constructEvent(payload, createSignature(payload));
+
+            assertTrue(event.data.get("customVariables") instanceof Map);
+            Map<?, ?> customVariables = (Map<?, ?>) event.data.get("customVariables");
+            assertEquals("ForgotChangePassword", customVariables.get("action_journeyType"));
+            assertEquals(2.0, customVariables.get("retryCount"));
+            assertEquals(true, customVariables.get("isRecovery"));
+            assertTrue(customVariables.get("channels") instanceof List);
+            assertEquals("sms", ((List<?>) customVariables.get("channels")).get(0));
+        } catch (InvalidSignatureException ex) {
+            fail("Expected an event with custom variables to be constructed");
+        }
+    }
+
+    @Test
+    public void testLogEventBatch() {
+        String payload = "{\"records\":[{"
+                + "\"version\":1,"
+                + "\"id\":\"bc1598bc-e5d6-4c69-9afb-1a6fe3469d6e\","
+                + "\"source\":\"https://authsignal.com\","
+                + "\"time\":\"2025-02-20T01:51:56.070Z\","
+                + "\"tenantId\":\"7752d28e-e627-4b1b-bb81-b45d68d617bc\","
+                + "\"type\":\"action.log_created\","
+                + "\"record\":{"
+                + "\"userId\":\"b9f74d36-fcfc-4efc-87f1-3664ab5a7fb0\","
+                + "\"customVariables\":{\"journeyType\":\"accountRecovery\"}"
+                + "}"
+                + "}]}";
+
+        try {
+            WebhookEventBatch batch = webhook.constructLogEventBatch(payload, createSignature(payload));
+
+            assertEquals(1, batch.records.size());
+            assertTrue(batch.records.get(0).record.get("customVariables") instanceof Map);
+        } catch (InvalidSignatureException ex) {
+            fail("Expected a log event batch to be constructed");
+        }
+    }
+
+    @Test
+    public void testLogEventBatchPassedToConstructEvent() {
+        String payload = "{\"records\":[]}";
+
+        try {
+            webhook.constructEvent(payload, createSignature(payload));
+            fail("Expected an InvalidPayloadException to be thrown");
+        } catch (Webhook.InvalidPayloadException ex) {
+            assertTrue(ex.getMessage().contains("constructLogEventBatch"));
+        } catch (InvalidSignatureException ex) {
+            fail("Expected a valid signature");
+        }
+    }
+
+    @Test
+    public void testInvalidPayload() {
+        String payload = "not-json";
+
+        try {
+            webhook.constructEvent(payload, createSignature(payload));
+            fail("Expected an InvalidPayloadException to be thrown");
+        } catch (Webhook.InvalidPayloadException ex) {
+            assertEquals("Payload format is invalid.", ex.getMessage());
+        } catch (InvalidSignatureException ex) {
+            fail("Expected a valid signature");
         }
     }
 }
