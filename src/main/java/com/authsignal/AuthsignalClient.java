@@ -11,6 +11,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public class AuthsignalClient {
@@ -27,7 +31,9 @@ public class AuthsignalClient {
 
     private static final String DEFAULT_API_URL = "https://api.authsignal.com/v1";
     private static final int DEFAULT_RETRIES = 2;
-    private static final String VERSION = "2.10.1";
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
+    private static final String VERSION = "3.1.0";
 
     public Webhook webhook;
 
@@ -132,7 +138,7 @@ public class AuthsignalClient {
 
         TrackAttributes attributes = request.attributes != null ? request.attributes : new TrackAttributes();
 
-        return postRequest(path, new Gson().toJson(attributes))
+        return postRequest(path, new Gson().toJson(attributes), attributes.idempotencyKey != null && !attributes.idempotencyKey.isEmpty())
                 .thenApply(response -> new Gson().fromJson(response.body(), TrackResponse.class));
     }
 
@@ -173,7 +179,7 @@ public class AuthsignalClient {
     public CompletableFuture<ActionAttributes> updateAction(UpdateActionRequest request) {
         String path = String.format("/users/%s/actions/%s/%s", request.userId, request.action, request.idempotencyKey);
 
-        return patchRequest(path, new Gson().toJson(request.attributes))
+        return patchRequest(path, new Gson().toJson(request.attributes), true)
                 .thenApply(response -> new Gson().fromJson(response.body(), ActionAttributes.class));
     }
 
@@ -249,13 +255,14 @@ public class AuthsignalClient {
             URI uri = new URI(_baseURL + path);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uri)
+                    .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", getBasicAuthHeader())
                     .header("X-Authsignal-Version", VERSION)
                     .header("User-Agent", "authsignal-java")
                     .GET()
                     .build();
 
-            return sendHttpRequest(request);
+            return sendHttpRequest(request, true);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
@@ -264,17 +271,22 @@ public class AuthsignalClient {
     }
 
     private CompletableFuture<HttpResponse<String>> postRequest(String path, String body) {
+        return postRequest(path, body, false);
+    }
+
+    private CompletableFuture<HttpResponse<String>> postRequest(String path, String body, boolean idempotent) {
         try {
             URI uri = new URI(_baseURL + path);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uri)
+                    .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", getBasicAuthHeader())
                     .header("Content-Type", "application/json")
                     .header("X-Authsignal-Version", VERSION)
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
-            return sendHttpRequest(request);
+            return sendHttpRequest(request, idempotent);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
@@ -282,18 +294,19 @@ public class AuthsignalClient {
         }
     }
 
-    private CompletableFuture<HttpResponse<String>> patchRequest(String path, String body) {
+    private CompletableFuture<HttpResponse<String>> patchRequest(String path, String body, boolean idempotent) {
         try {
             URI uri = new URI(_baseURL + path);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uri)
+                    .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", getBasicAuthHeader())
                     .header("Content-Type", "application/json")
                     .header("X-Authsignal-Version", VERSION)
                     .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
-            return sendHttpRequest(request);
+            return sendHttpRequest(request, idempotent);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
@@ -306,12 +319,13 @@ public class AuthsignalClient {
             URI uri = new URI(_baseURL + path);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uri)
+                    .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", getBasicAuthHeader())
                     .header("X-Authsignal-Version", VERSION)
                     .DELETE()
                     .build();
 
-            return sendHttpRequest(request);
+            return sendHttpRequest(request, false);
         } catch (URISyntaxException ex) {
             CompletableFuture<HttpResponse<String>> future = new CompletableFuture<>();
             future.completeExceptionally(new InvalidURLFormatException());
@@ -329,20 +343,21 @@ public class AuthsignalClient {
         return new AuthsignalException(response.statusCode(), errorResponse.error, errorResponse.errorDescription);
     }
 
-    private CompletableFuture<HttpResponse<String>> sendHttpRequest(HttpRequest request, int retryCount) {
+    private CompletableFuture<HttpResponse<String>> sendHttpRequest(HttpRequest request, boolean idempotent, int retryCount) {
         HttpClient client = HttpClient
                 .newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(CONNECT_TIMEOUT)
                 .build();
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .handle((response, throwable) -> {
-                    if (shouldRetry(request, response, throwable, retryCount)) {
-                        long delay = (long) (100 * Math.pow(2, retryCount + 1));
+                    if (shouldRetry(request, response, throwable, idempotent, retryCount)) {
+                        long delay = retryDelay(response, retryCount);
 
                         return CompletableFuture.supplyAsync(() -> null,
                                 CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
-                                .thenCompose(f -> sendHttpRequest(request, retryCount + 1));
+                                .thenCompose(f -> sendHttpRequest(request, idempotent, retryCount + 1));
                     }
 
                     // Complete with HTTP client error
@@ -364,12 +379,17 @@ public class AuthsignalClient {
                 }).thenCompose(future -> future);
     }
 
-    private CompletableFuture<HttpResponse<String>> sendHttpRequest(HttpRequest request) {
-        return sendHttpRequest(request, 0);
+    private CompletableFuture<HttpResponse<String>> sendHttpRequest(HttpRequest request, boolean idempotent) {
+        return sendHttpRequest(request, idempotent, 0);
     }
 
-    private boolean shouldRetry(HttpRequest request, HttpResponse<String> response, Throwable error, int retryCount) {
+    private boolean shouldRetry(HttpRequest request, HttpResponse<String> response, Throwable error, boolean idempotent, int retryCount) {
         if (retryCount >= retries) {
+            return false;
+        }
+
+        List<String> safeHttpMethods = Arrays.asList("GET", "HEAD", "OPTIONS");
+        if (!idempotent && !safeHttpMethods.contains(request.method())) {
             return false;
         }
 
@@ -389,14 +409,32 @@ public class AuthsignalClient {
             }
         }
 
-        List<String> safeHttpMethods = Arrays.asList("GET", "HEAD", "OPTIONS");
+        return response != null && (response.statusCode() == 429 || isServerErrorResponse(response.statusCode()));
+    }
 
-        if (isServerErrorResponse(response.statusCode()) && safeHttpMethods.contains(request.method())) {
+    private long retryDelay(HttpResponse<String> response, int retryCount) {
+        long baseDelay = (long) (100 * Math.pow(2, retryCount));
+        long delay = baseDelay + ThreadLocalRandom.current().nextLong(Math.max(1, baseDelay / 5));
 
-            return true;
+        if (response != null && response.statusCode() == 429) {
+            String retryAfter = response.headers().firstValue("Retry-After").orElse(null);
+            if (retryAfter != null) {
+                try {
+                    delay = Math.max(delay, (long) (Double.parseDouble(retryAfter) * 1000));
+                } catch (NumberFormatException ex) {
+                    try {
+                        long retryAfterDelay = Duration.between(
+                                ZonedDateTime.now(),
+                                ZonedDateTime.parse(retryAfter, DateTimeFormatter.RFC_1123_DATE_TIME)).toMillis();
+                        delay = Math.max(delay, retryAfterDelay);
+                    } catch (RuntimeException ignored) {
+                        // Ignore malformed Retry-After headers and use exponential backoff.
+                    }
+                }
+            }
         }
 
-        return false;
+        return delay;
     }
 
     private boolean isSuccessResponse(int statusCode) {

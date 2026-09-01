@@ -39,6 +39,10 @@ import com.authsignal.AuthsignalClient;
 AuthsignalClient client = new AuthsignalClient(secret, baseURL);
 ```
 
+### Retry policy
+
+Requests use a 3-second connect timeout, 10-second request timeout, and retry twice by default with exponential backoff and jitter. Transient network failures, `429`, and `5xx` responses are retried for `GET`, `HEAD`, and `OPTIONS`; writes are retried only when they carry an idempotency key. Pass a retry count to `new AuthsignalClient(secret, baseURL, retries)`; use `0` to disable retries.
+
 You can find your tenant secret in the [Authsignal Portal](https://portal.authsignal.com/organisations/tenants/api).
 
 You must specify the correct base URL for your tenant's region.
