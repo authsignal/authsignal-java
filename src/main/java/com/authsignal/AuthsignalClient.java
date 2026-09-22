@@ -27,7 +27,7 @@ public class AuthsignalClient {
 
     private static final String DEFAULT_API_URL = "https://api.authsignal.com/v1";
     private static final int DEFAULT_RETRIES = 2;
-    private static final String VERSION = "2.10.1";
+    private static final String VERSION = "3.1.0";
 
     public Webhook webhook;
 
@@ -242,6 +242,16 @@ public class AuthsignalClient {
     public CompletableFuture<Void> revokeUserSessions(RevokeUserSessionsRequest request) {
         return postRequest("/sessions/user/revoke", new Gson().toJson(request))
                 .thenApply(response -> null);
+    }
+
+    public CompletableFuture<StartFlowResponse> startFlow(StartFlowRequest request) {
+        return postRequest("/flows", new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), StartFlowResponse.class));
+    }
+
+    public CompletableFuture<VerifyFlowResponse> verifyFlow(VerifyFlowRequest request) {
+        return postRequest("/flows/verify", new Gson().toJson(request))
+                .thenApply(response -> new Gson().fromJson(response.body(), VerifyFlowResponse.class));
     }
 
     private CompletableFuture<HttpResponse<String>> getRequest(String path) {

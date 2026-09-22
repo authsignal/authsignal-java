@@ -41,4 +41,7 @@ public enum VerificationMethodType {
 
     @SerializedName("WHATSAPP")
     WHATSAPP,
+
+    @SerializedName("RECOVERY_CODE")
+    RECOVERY_CODE,
 }
