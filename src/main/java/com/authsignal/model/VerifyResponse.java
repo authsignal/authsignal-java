@@ -5,4 +5,5 @@ public class VerifyResponse extends ApiModel {
     public String email;
     public String phoneNumber;
     public VerificationMethodType verificationMethod;
+    public String failureReason;
 }
